@@ -19,11 +19,8 @@ def env_mock():
 
 @pytest.fixture
 def api_lock_fix(env_mock):
-    api_del = ctl.sdk.ApiClient.__del__
-    ctl.sdk.ApiClient.__del__ = lambda x: x
-    yield
     # NOTE: We don't restore __del__ for api client since there is a known issue with locking pool.
-    # ctl.sdk.ApiClient.__del__ = api_del
+    ctl.sdk.ApiClient.__del__ = lambda x: x
 
 
 @pytest.fixture

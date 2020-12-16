@@ -12,7 +12,7 @@ from syntropy_sdk.rest import ApiException
 from syntropycli import __main__ as ctl
 
 
-def testLogin(runner):
+def test_login(runner):
     with mock.patch.object(
         ctl.sdk.AuthApi,
         "local",
@@ -31,7 +31,7 @@ def testLogin(runner):
         )
 
 
-def testGetApiKeys(runner, print_table_mock):
+def test_get_api_keys(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_api_key",
@@ -43,7 +43,7 @@ def testGetApiKeys(runner, print_table_mock):
         print_table_mock.assert_called_once()
 
 
-def testCreateApiKey(runner):
+def test_create_api_key(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "create_api_key",
@@ -63,7 +63,7 @@ def testCreateApiKey(runner):
         )
 
 
-def testDeleteApiKeyById(runner):
+def test_delete_api_key__by_id(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi, "delete_api_key", autospec=True
     ) as the_mock:
@@ -71,7 +71,7 @@ def testDeleteApiKeyById(runner):
         the_mock.assert_called_once_with(mock.ANY, 123)
 
 
-def testDeleteApiKeyByName(runner):
+def test_delete_api_key__by_name(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_api_key",
@@ -91,7 +91,7 @@ def testDeleteApiKeyByName(runner):
             index_mock.assert_called_once()
 
 
-def testGetEndpoints(runner, print_table_mock):
+def test_get_endpoints(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_agents",
@@ -103,7 +103,7 @@ def testGetEndpoints(runner, print_table_mock):
         print_table_mock.assert_called_once()
 
 
-def testGetEndpointsServices(runner, print_table_mock):
+def test_get_endpoints__with_services(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_agents",
@@ -128,7 +128,7 @@ def testGetEndpointsServices(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def testGetTopology(runner, print_table_mock):
+def test_get_topology(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "topology_networks",
@@ -140,7 +140,7 @@ def testGetTopology(runner, print_table_mock):
         print_table_mock.assert_called_once()
 
 
-def testGetConnections(runner, print_table_mock):
+def test_get_connections(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_connections",
@@ -152,7 +152,7 @@ def testGetConnections(runner, print_table_mock):
         print_table_mock.assert_called_once()
 
 
-def testGetConnectionsServices(runner, print_table_mock):
+def test_get_connections__with_services(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_connections",
@@ -171,7 +171,7 @@ def testGetConnectionsServices(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def testCreateConnectionsP2P(runner, print_table_mock):
+def test_create_connections__p2p(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -197,7 +197,7 @@ def testCreateConnectionsP2P(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def testCreateConnectionsMesh(runner, print_table_mock):
+def test_create_connections__mesh(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -223,7 +223,7 @@ def testCreateConnectionsMesh(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def testCreateConnectionsP2PByName(runner, print_table_mock):
+def test_create_connections__p2p_by_name(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -271,7 +271,7 @@ def testCreateConnectionsP2PByName(runner, print_table_mock):
                 print_table_mock.assert_called_once()
 
 
-def testDeleteConnection(runner):
+def test_delete_connection(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi, "delete_connection", autospec=True
     ) as the_mock:
@@ -279,7 +279,7 @@ def testDeleteConnection(runner):
         the_mock.assert_called_once_with(mock.ANY, 123)
 
 
-def testGetNetworks(runner, print_table_mock):
+def test_get_networks(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -307,7 +307,7 @@ def testGetNetworks(runner, print_table_mock):
         "GATEWAY",
     ],
 )
-def testCreateNetwork(runner, topology, network_type):
+def test_create_network(runner, topology, network_type):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "create_network",
@@ -341,7 +341,7 @@ def testCreateNetwork(runner, topology, network_type):
         )
 
 
-def testManageNetworkEndpointsShow(runner):
+def test_manage_network_endpoints__show(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -384,7 +384,7 @@ def testManageNetworkEndpointsShow(runner):
 
 
 @pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
-def testManageNetworkEndpointsRemove(runner, agent_name, use_names):
+def test_manage_network_endpoints__remove(runner, agent_name, use_names):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -436,7 +436,7 @@ def testManageNetworkEndpointsRemove(runner, agent_name, use_names):
 
 
 @pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
-def testManageNetworkEndpointsAdd(runner, agent_name, use_names):
+def test_manage_network_endpoints__add(runner, agent_name, use_names):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -515,7 +515,7 @@ def testManageNetworkEndpointsAdd(runner, agent_name, use_names):
                     )
 
 
-def testCreateNetworkDefault(runner):
+def test_create_network__default(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "create_network",
@@ -543,7 +543,7 @@ def testCreateNetworkDefault(runner):
         )
 
 
-def testDeleteNetworkMultiple(runner):
+def test_delete_network__multiple(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",

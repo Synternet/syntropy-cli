@@ -12,7 +12,7 @@ from syntropy_sdk.rest import ApiException
 from syntropycli import utils
 
 
-def testPrintTable():
+def test_print_table():
     items = [
         {"a": 123, "b": 321, "c": {"ac": 1, "bc": None}},
         {"a": 111, "b": 222},
@@ -37,7 +37,7 @@ def testPrintTable():
         ]
 
 
-def testPrintTableJson():
+def test_print_table__json():
     items = [
         {"a": 123, "b": 321, "c": {"ac": 1, "bc": None}},
         {"a": 111, "b": 222},
@@ -51,7 +51,7 @@ def testPrintTableJson():
         the_mock.assert_called_once_with(items, indent=4)
 
 
-def testFindByName():
+def test_find_by_name():
     items = [
         {"test_id": 1, "test_name": "name"},
         {"test_id": 2, "test_name": "name1"},
@@ -59,7 +59,7 @@ def testFindByName():
     assert utils.find_by_name(items, "name1", "test") == 2
 
 
-def testFindByNameList():
+def test_find_by_name__list():
     items = [
         {"test_id": 1, "test_name": "name"},
         {"test_id": 2, "test_name": "name1"},
@@ -67,7 +67,7 @@ def testFindByNameList():
     assert utils.find_by_name(items, ["name1", "name"], "test") == [2, 1]
 
 
-def testFindByNameListNotFound():
+def test_find_by_name__list__not_found():
     items = [
         {"test_id": 1, "test_name": "name"},
         {"test_id": 2, "test_name": "name1"},
@@ -79,7 +79,7 @@ def testFindByNameListNotFound():
     ]
 
 
-def testFindByNameNotFound():
+def test_find_by_name__not_found():
     items = [
         {"test_id": 1, "test_name": "name"},
         {"test_id": 2, "test_name": "name1"},
@@ -87,7 +87,7 @@ def testFindByNameNotFound():
     assert utils.find_by_name(items, "test3", "test") is None
 
 
-def testFindByNameNoField():
+def test_find_by_name__no_field():
     items = [
         {"test_id": 1, "test_name": "name"},
         {"test_id": 2, "test_name": "name1"},
@@ -95,7 +95,7 @@ def testFindByNameNoField():
     assert utils.find_by_name(items, "test3", "test") is None
 
 
-def testCollectEndpointServices():
+def test_collect_endpoint_services():
     agent_services = [
         {
             "agent_service_name": "a",
@@ -205,7 +205,7 @@ def testCollectEndpointServices():
     assert "g!!" in utils.collect_endpoint_services(agent_services)
 
 
-def testCollectConnectionServices():
+def test_collect_connection_services():
     connection_services = {
         "agent_connection_subnets": [
             {
@@ -301,7 +301,7 @@ def testCollectConnectionServices():
         [["a", "b"], [], [], [], True, []],
     ],
 )
-def testUpdateList(data, set_items, add_items, remove_items, clear_items, items):
+def test_update_list(data, set_items, add_items, remove_items, clear_items, items):
     assert (
         utils._update_list(data, set_items, add_items, remove_items, clear_items)
         == items
@@ -318,6 +318,6 @@ def testUpdateList(data, set_items, add_items, remove_items, clear_items, items)
         [["b", "c"], ["  a "], [], [], False],
     ],
 )
-def testUpdateList__fail(data, set_items, add_items, remove_items, clear_items):
+def test_update_list__fail(data, set_items, add_items, remove_items, clear_items):
     with pytest.raises(SystemExit):
         utils._update_list(data, set_items, add_items, remove_items, clear_items)
