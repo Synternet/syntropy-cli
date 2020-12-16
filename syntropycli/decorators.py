@@ -4,7 +4,7 @@ import time
 
 import click
 import syntropy_sdk as sdk
-from syntropy_sdk.rest import ApiException
+from syntropy_sdk.exceptions import ApiException
 from syntropy_sdk.utils import *
 
 

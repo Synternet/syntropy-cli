@@ -1,22 +1,9 @@
 import json
-from collections import defaultdict
-from itertools import combinations
 
 import click
 import syntropy_sdk as sdk
 from prettytable import PrettyTable
 from syntropy_sdk.utils import *
-
-ALLOWED_NETWORK_TYPES = (
-    sdk.NetworkType.POINT_TO_POINT,
-    sdk.NetworkType.GATEWAY,
-    sdk.NetworkType.MESH,
-)
-ALLOWED_NETWORK_TOPOLOGIES = (
-    sdk.MetadataNetworkType.P2P,
-    sdk.MetadataNetworkType.P2M,
-    sdk.MetadataNetworkType.MESH,
-)
 
 
 def print_table(items, fields, to_json=False):

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import functools
-import os
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 import click
 import syntropy_sdk as sdk
-import yaml
 
 from syntropycli.decorators import *
 from syntropycli.utils import *
