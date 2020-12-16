@@ -1,0 +1,4 @@
+# NOTE: This will be uncommented once syntropy_sdk is deployed
+#syntropy_sdk
+click >= 7.1.0
+prettytable
