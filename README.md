@@ -67,6 +67,7 @@ Commands:
   get-connections           Retrieves network connections.
   get-endpoints             List all endpoints.
   get-networks              List all networks.
+  get-providers             Retrieve a list of providers.
   get-topology              Retrieves networks topology.
   login                     Login with username and password.
   manage-network-endpoints  Add/Remove endpoints to/from a network.
