@@ -18,7 +18,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip3 install --upgrade pip
-        pip3 install --upgrade setuptools wheel
+        pip3 install --upgrade setuptools wheel twine
+        sudo apt-get install jq
     - name: Build the wheel
       run: |
         export CI_SYNTROPY_VERSION=$(echo $GITHUB_REF | sed 's#.*/v##')
