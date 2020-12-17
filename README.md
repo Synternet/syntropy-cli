@@ -1,3 +1,6 @@
+![Tests](https://github.com/SyntropyNet/syntropy-cli/workflows/Tests/badge.svg)
+![PyPi](https://github.com/SyntropyNet/syntropy-cli/workflows/PyPi/badge.svg)
+
 # Syntropy CLI
 Syntropy CLI allows you to manage Syntropy endpoints, networks, and connections using command line interface. 
 
