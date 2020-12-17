@@ -51,6 +51,30 @@ def login(username, password, api):
 
 
 @apis.command()
+@click.option("--skip", default=0, type=int, help="Skip N providers")
+@click.option("--take", default=128, type=int, help="Take N providers")
+@click.option(
+    "--json",
+    "-j",
+    is_flag=True,
+    default=False,
+    help="Outputs a JSON instead of a table",
+)
+@syntropy_api
+def get_providers(skip, take, json, api):
+    """Retrieve a list of providers."""
+    provider = sdk.ProvidersApi(api)
+    providers = provider.index(skip=skip, take=take)
+    fields = [
+        ("ID", "provider_id"),
+        ("Name", "provider_name"),
+        ("Created At", "provider_created_at"),
+        ("Updated At", "provider_updated_at"),
+    ]
+    print_table(providers, fields, to_json=json)
+
+
+@apis.command()
 @click.option(
     "--show-secret", "-s", is_flag=True, default=False, help="Shows API secrets"
 )

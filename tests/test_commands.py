@@ -41,6 +41,40 @@ def test_login(runner):
         )
 
 
+def test_get_providers(runner, print_table_mock):
+    with mock.patch.object(
+        ctl.sdk.ProvidersApi,
+        "index",
+        autospec=True,
+        return_value=[
+            {
+                "provider_id": 1,
+                "provider_name": "AWS",
+                "provider_tunnels_required": True,
+                "provider_created_at": "2019-12-12T15:51:06.905",
+                "provider_updated_at": "2019-12-12T15:51:06.905",
+            },
+            {
+                "provider_id": 2,
+                "provider_name": "IBM",
+                "provider_tunnels_required": True,
+                "provider_created_at": "2020-01-22T15:50:55.325",
+                "provider_updated_at": "2020-01-22T15:50:55.325",
+            },
+            {
+                "provider_id": 3,
+                "provider_name": "Unknown",
+                "provider_tunnels_required": True,
+                "provider_created_at": "2020-09-21T07:48:50.111",
+                "provider_updated_at": "2020-09-21T07:48:50.111",
+            },
+        ],
+    ) as index_mock:
+        runner.invoke(ctl.get_providers)
+        index_mock.assert_called_once()
+        print_table_mock.assert_called_once()
+
+
 def test_get_api_keys(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
