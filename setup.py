@@ -19,25 +19,11 @@ try:
 except ImportError:
     from distutils.core import find_packages, setup
 
-if os.environ.get("CI_COMMIT_TAG"):
-    # Development version of the package
-    version = os.environ["CI_COMMIT_TAG"] + ".devel"
-elif os.environ.get("CI_COMMIT_BRANCH"):
-    if (
-        os.environ["CI_COMMIT_BRANCH"].startswith("v")
-        and "." in os.environ["CI_COMMIT_BRANCH"]
-    ):
-        # Production version of the package
-        version = os.environ["CI_COMMIT_BRANCH"][1:]
-    else:
-        # Any other branch
-        version = (
-            f"{os.environ['CI_COMMIT_BRANCH']}.{os.environ['CI_COMMIT_SHORT_SHA']}"
-        )
-elif os.environ.get("CI_JOB_ID"):
-    version = os.environ["CI_JOB_ID"]
+if os.environ.get("CI_SYNTROPY_VERSION"):
+    version = os.environ["CI_SYNTROPY_VERSION"]
 else:
-    version = time.strftime("%Y.%-m.%-d.%H%M")
+    # Development version of the package
+    version = "devel"
 
 setup(
     name="syntropycli",
