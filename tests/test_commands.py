@@ -12,6 +12,16 @@ from syntropy_sdk.rest import ApiException
 from syntropycli import __main__ as ctl
 
 
+@pytest.fixture
+def confirm_deletion():
+    with mock.patch(
+        "syntropycli.__main__.confirm_deletion",
+        autospec=True,
+        side_effect=[False, True],
+    ) as the_mock:
+        yield the_mock
+
+
 def test_login(runner):
     with mock.patch.object(
         ctl.sdk.AuthApi,
@@ -71,7 +81,7 @@ def test_delete_api_key__by_id(runner):
         the_mock.assert_called_once_with(mock.ANY, 123)
 
 
-def test_delete_api_key__by_name(runner):
+def test_delete_api_key__by_name(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_api_key",
@@ -89,6 +99,31 @@ def test_delete_api_key__by_name(runner):
             runner.invoke(ctl.delete_api_key, ["--name", "test"])
             the_mock.assert_called_once_with(mock.ANY, 123)
             index_mock.assert_called_once()
+            assert confirm_deletion.call_count == 2
+
+
+def test_delete_api_key__by_name_force(runner, confirm_deletion):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "index_api_key",
+        autospec=True,
+        return_value={
+            "data": [
+                {"api_key_name": "skip", "api_key_id": 321},
+                {"api_key_name": "test", "api_key_id": 123},
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi, "delete_api_key", autospec=True
+        ) as the_mock:
+            runner.invoke(ctl.delete_api_key, ["--name", "test", "--yes"])
+            assert the_mock.call_args_list == [
+                mock.call(mock.ANY, 321),
+                mock.call(mock.ANY, 123),
+            ]
+            index_mock.assert_called_once()
+            assert confirm_deletion.call_count == 0
 
 
 def test_get_endpoints(runner, print_table_mock):
@@ -543,7 +578,7 @@ def test_create_network__default(runner):
         )
 
 
-def test_delete_network__multiple(runner):
+def test_delete_network__multiple(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "index_networks",
@@ -560,7 +595,31 @@ def test_delete_network__multiple(runner):
         ) as the_mock:
             runner.invoke(ctl.delete_network, ["test"])
             assert the_mock.call_args_list == [
+                mock.call(mock.ANY, 123),
+            ]
+            index_mock.assert_called_once_with(mock.ANY, filter="id|name:test")
+            assert confirm_deletion.call_count == 2
+
+
+def test_delete_network__multiple_forced(runner, confirm_deletion):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "index_networks",
+        autospec=True,
+        return_value={
+            "data": [
+                {"network_name": "test", "network_id": 321},
+                {"network_name": "test", "network_id": 123},
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi, "delete_networks", autospec=True
+        ) as the_mock:
+            runner.invoke(ctl.delete_network, ["test", "--yes"])
+            assert the_mock.call_args_list == [
                 mock.call(mock.ANY, 321),
                 mock.call(mock.ANY, 123),
             ]
             index_mock.assert_called_once_with(mock.ANY, filter="id|name:test")
+            assert confirm_deletion.call_count == 0

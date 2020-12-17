@@ -74,7 +74,7 @@ def get_api_keys(show_secret, skip, take, json, platform):
     keys = platform.index_api_key(skip=skip, take=take)["data"]
 
     fields = [
-        ("Organization ID", "api_key_id"),
+        ("ID", "api_key_id"),
         ("User ID", "user_id"),
         ("Key ID", "api_key_id"),
         ("Key Name", "api_key_name"),
@@ -108,23 +108,44 @@ def create_api_key(name, suspended, expires, platform):
     click.echo(result["data"]["api_key_id"])
 
 
+def confirm_deletion(name, id):
+    try:
+        return click.confirm(f"Do you want to delete '{name}' (id={id})?")
+    except click.Abort:
+        raise SystemExit(1)
+
+
 @apis.command()
 @click.option("--name", default=None, type=str)
 @click.option("--id", default=None, type=int)
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    default=False,
+    help="Forces to delete all matching networks.",
+)
 @syntropy_platform
-def delete_api_key(name, id, platform):
+def delete_api_key(name, id, yes, platform):
     """Delete API key either by name or by id. If there are multiple names - please use id."""
     if name is None and id is None:
         click.secho("Either API key name or id must be specified.", err=True, fg="red")
         raise SystemExit(1)
 
     if id is None:
-        keys = platform.index_api_key()["data"]
-        id = find_by_name(keys, name, "api_key")
-        if id is None:
-            raise SystemExit(1)
+        keys = platform.index_api_key(filter=f"api_key_name:{name}")["data"]
+        for key in keys:
+            if not yes and not confirm_deletion(key["api_key_name"], key["api_key_id"]):
+                continue
 
-    platform.delete_api_key(id)
+            platform.delete_api_key(key["api_key_id"])
+            click.secho(
+                f"Deleted API key: {key['api_key_name']} (id={key['api_key_id']}).",
+                fg="green",
+            )
+    else:
+        platform.delete_api_key(id)
+        click.secho(f"Deleted API key: id={id}.", fg="green")
 
 
 def _get_endpoints(
@@ -964,21 +985,27 @@ def manage_network_endpoints(
 
 @apis.command()
 @click.argument("network")
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    default=False,
+    help="Forces to delete all matching networks.",
+)
 @syntropy_platform
-def delete_network(network, platform):
+def delete_network(network, yes, platform):
     """Delete a network."""
     networks = platform.index_networks(filter=f"id|name:{network}")["data"]
 
-    if len(networks) > 1:
-        click.echo(f"Found {len(networks)} networks by name {network}.")
-    elif not networks:
-        click.secho(
-            f"Could not find a network by id/name {network}.", err=True, fg="red"
-        )
-        raise SystemExit(1)
-
     for net in networks:
+        if not yes and not confirm_deletion(net["network_name"], net["network_id"]):
+            continue
+
         platform.delete_networks(net["network_id"])
+        click.secho(
+            f"Deleted network: {net['network_name']} (id={net['network_id']}).",
+            fg="green",
+        )
 
 
 def main():
