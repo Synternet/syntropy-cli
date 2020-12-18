@@ -43,34 +43,34 @@ def test_login(runner):
 
 def test_get_providers(runner, print_table_mock):
     with mock.patch.object(
-        ctl.sdk.ProvidersApi,
+        ctl.sdk.AgentProvidersApi,
         "index",
         autospec=True,
         return_value=[
             {
-                "provider_id": 1,
-                "provider_name": "AWS",
-                "provider_tunnels_required": True,
-                "provider_created_at": "2019-12-12T15:51:06.905",
-                "provider_updated_at": "2019-12-12T15:51:06.905",
+                "agent_provider_id": 1,
+                "agent_provider_name": "AWS",
+                "agent_provider_tunnels_required": True,
+                "agent_provider_created_at": "2019-12-12T15:51:06.905",
+                "agent_provider_updated_at": "2019-12-12T15:51:06.905",
             },
             {
-                "provider_id": 2,
-                "provider_name": "IBM",
-                "provider_tunnels_required": True,
-                "provider_created_at": "2020-01-22T15:50:55.325",
-                "provider_updated_at": "2020-01-22T15:50:55.325",
+                "agent_provider_id": 2,
+                "agent_provider_name": "IBM",
+                "agent_provider_tunnels_required": True,
+                "agent_provider_created_at": "2020-01-22T15:50:55.325",
+                "agent_provider_updated_at": "2020-01-22T15:50:55.325",
             },
             {
-                "provider_id": 3,
-                "provider_name": "Unknown",
-                "provider_tunnels_required": True,
-                "provider_created_at": "2020-09-21T07:48:50.111",
-                "provider_updated_at": "2020-09-21T07:48:50.111",
+                "agent_provider_id": 3,
+                "agent_provider_name": "Unknown",
+                "agent_provider_tunnels_required": True,
+                "agent_provider_created_at": "2020-09-21T07:48:50.111",
+                "agent_provider_updated_at": "2020-09-21T07:48:50.111",
             },
         ],
     ) as index_mock:
-        runner.invoke(ctl.get_providers)
+        result = runner.invoke(ctl.get_providers)
         index_mock.assert_called_once()
         print_table_mock.assert_called_once()
 
