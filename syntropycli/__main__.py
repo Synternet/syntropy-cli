@@ -62,14 +62,14 @@ def login(username, password, api):
 )
 @syntropy_api
 def get_providers(skip, take, json, api):
-    """Retrieve a list of providers."""
-    provider = sdk.ProvidersApi(api)
+    """Retrieve a list of endpoint providers."""
+    provider = sdk.AgentProvidersApi(api)
     providers = provider.index(skip=skip, take=take)
     fields = [
-        ("ID", "provider_id"),
-        ("Name", "provider_name"),
-        ("Created At", "provider_created_at"),
-        ("Updated At", "provider_updated_at"),
+        ("ID", "agent_provider_id"),
+        ("Name", "agent_provider_name"),
+        ("Created At", "agent_provider_created_at"),
+        ("Updated At", "agent_provider_updated_at"),
     ]
     print_table(providers, fields, to_json=json)
 
