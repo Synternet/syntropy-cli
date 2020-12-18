@@ -430,7 +430,7 @@ def configure_endpoints(
         }
         for agent in agents:
             original_tags = agents_tags.get(agent["agent_id"], [])
-            tags = _update_list(original_tags, set_tag, add_tag, remove_tag, clear_tags)
+            tags = update_list(original_tags, set_tag, add_tag, remove_tag, clear_tags)
             payload = {}
             if set_provider and set_provider != agent.get("agent_provider", {}).get(
                 "agent_provider_name"
@@ -484,7 +484,7 @@ def configure_endpoints(
                     or enable_all_services
                 )
             ]
-            enabled_services = _update_list(
+            enabled_services = update_list(
                 enabled_services,
                 set_service,
                 enable_service,

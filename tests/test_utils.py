@@ -303,7 +303,7 @@ def test_collect_connection_services():
 )
 def test_update_list(data, set_items, add_items, remove_items, clear_items, items):
     assert (
-        utils._update_list(data, set_items, add_items, remove_items, clear_items)
+        utils.update_list(data, set_items, add_items, remove_items, clear_items)
         == items
     )
 
@@ -320,4 +320,4 @@ def test_update_list(data, set_items, add_items, remove_items, clear_items, item
 )
 def test_update_list__fail(data, set_items, add_items, remove_items, clear_items):
     with pytest.raises(SystemExit):
-        utils._update_list(data, set_items, add_items, remove_items, clear_items)
+        utils.update_list(data, set_items, add_items, remove_items, clear_items)

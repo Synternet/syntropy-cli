@@ -128,7 +128,7 @@ def collect_connection_services(services):
     return ", ".join(services) if services else "-"
 
 
-def _validate_items(items):
+def validate_items(items):
     for item in items:
         if 0 <= len(item.strip()) < 3:
             click.secho(
@@ -137,13 +137,13 @@ def _validate_items(items):
             raise SystemExit(1)
 
 
-def _update_list(data, set_items, add_items, remove_items, clear_items, validate=True):
+def update_list(data, set_items, add_items, remove_items, clear_items, validate=True):
     data = list(data[:])
     if set_items:
-        validate and _validate_items(set_items)
+        validate and validate_items(set_items)
         data = list(item.strip() for item in set_items)
     if add_items:
-        validate and _validate_items(add_items)
+        validate and validate_items(add_items)
         data += [item.strip() for item in add_items if item not in data]
     if remove_items:
         data = [item.strip() for item in data if item not in remove_items]

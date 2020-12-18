@@ -197,6 +197,159 @@ def test_get_endpoints__with_services(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
+def test_configure_endpoints__none(runner, print_table_mock):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "index_agents",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "agent_id": 123,
+                }
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi,
+            "get_agent_services_with_subnets",
+            autospec=True,
+            return_value={"data": []},
+        ) as services_mock:
+            runner.invoke(ctl.configure_endpoints, "an-endpoint")
+            assert index_mock.call_count == 2
+            assert services_mock.call_count == 0
+            print_table_mock.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "args, patch_args",
+    [
+        [["an-endpoint", "--add-tag", "abcd"], {"agent_tags": ["abcd"]}],
+        [
+            ["an-endpoint", "--set-provider", "another"],
+            {"agent_provider_name": "another"},
+        ],
+        [
+            ["an-endpoint", "--add-tag", "abcd", "--set-provider", "another"],
+            {"agent_tags": ["abcd"], "agent_provider_name": "another"},
+        ],
+    ],
+)
+def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "index_agents",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "agent_id": 123,
+                    "agent_provider": {"agent_provider_name": "provider"},
+                }
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi,
+            "get_agent_services_with_subnets",
+            autospec=True,
+            return_value={"data": []},
+        ) as services_mock:
+            with mock.patch.object(
+                ctl.sdk.PlatformApi,
+                "patch_agents",
+                autospec=True,
+            ) as patch_mock:
+                runner.invoke(ctl.configure_endpoints, args)
+                assert index_mock.call_count == 2
+                patch_mock.assert_called_once_with(mock.ANY, patch_args, 123)
+                assert services_mock.call_count == 0
+                print_table_mock.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "args, patch_args",
+    [
+        [
+            ["an-endpoint", "--set-service", "abc"],
+            [{"id": 1, "isEnabled": True}, {"id": 2, "isEnabled": False}],
+        ],
+        [
+            ["an-endpoint", "--enable-service", "abc"],
+            [{"id": 1, "isEnabled": True}],
+        ],
+        [
+            ["an-endpoint", "--disable-service", "def"],
+            [{"id": 2, "isEnabled": False}],
+        ],
+        [["an-endpoint", "--enable-all-services"], [{"id": 1, "isEnabled": True}]],
+        [
+            ["an-endpoint", "--disable-all-services"],
+            [{"id": 2, "isEnabled": False}],
+        ],
+    ],
+)
+def test_configure_endpoints_services(runner, print_table_mock, args, patch_args):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "index_agents",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "agent_id": 123,
+                }
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi,
+            "get_agent_services_with_subnets",
+            autospec=True,
+            return_value={
+                "data": [
+                    {
+                        "agent_id": 123,
+                        "agent_service_name": "abc",
+                        "agent_service_is_active": True,
+                        "agent_service_subnets": [
+                            {
+                                "agent_service_subnet_id": 1,
+                                "agent_service_subnet_is_user_enabled": False,
+                                "agent_service_subnet_is_active": True,
+                            },
+                        ],
+                    },
+                    {
+                        "agent_id": 123,
+                        "agent_service_name": "def",
+                        "agent_service_is_active": True,
+                        "agent_service_subnets": [
+                            {
+                                "agent_service_subnet_id": 2,
+                                "agent_service_subnet_is_user_enabled": True,
+                                "agent_service_subnet_is_active": True,
+                            },
+                        ],
+                    },
+                ]
+            },
+        ) as services_mock:
+            with mock.patch.object(
+                ctl.sdk.PlatformApi,
+                "update_agent_services_subnets_status",
+                autospec=True,
+            ) as patch_mock:
+                runner.invoke(ctl.configure_endpoints, args)
+                assert index_mock.call_count == 2
+                patch_mock.assert_called_once_with(
+                    mock.ANY, {"subnetsToUpdate": patch_args}
+                )
+                assert services_mock.call_count == 2
+                print_table_mock.assert_called_once()
+
+
 def test_get_topology(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,

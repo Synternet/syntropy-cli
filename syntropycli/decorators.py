@@ -40,8 +40,6 @@ def syntropy_api(func):
             click.secho("API error occured", err=True, fg="red")
             click.secho(f"Reason: {str(err)}", err=True, fg="red")
             raise SystemExit(2)
-        finally:
-            del api
 
     return wrapper
 
@@ -57,12 +55,7 @@ def syntropy_platform(func):
                 err=True,
                 fg="yellow",
             )
-        try:
-            api = sdk.PlatformApi(api)
-            return func(*args, platform=api, **kwargs)
-        except:
-            raise
-        finally:
-            del api
+        api = sdk.PlatformApi(api)
+        return func(*args, platform=api, **kwargs)
 
     return syntropy_api(wrapper)
