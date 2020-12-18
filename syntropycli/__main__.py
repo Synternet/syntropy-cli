@@ -177,7 +177,7 @@ def _get_endpoints(
 ):
     filters = []
     if name:
-        filters.append(f"id|name:{name}")
+        filters.append(f"id|name:'{name}'")
     elif id:
         filters.append(f"ids[]:{id}")
     if tag:
@@ -411,7 +411,7 @@ def configure_endpoints(
     The same applies to services.
     """
     agents = platform.index_agents(
-        filter=f"id|name:{endpoint}",
+        filter=f"id|name:'{endpoint}'",
     )["data"]
 
     if not agents:
@@ -598,7 +598,7 @@ def get_connections(network, id, skip, take, show_services, json, platform):
         try:
             filters.append(f"networks[]:{int(network)}")
         except ValueError:
-            networks = platform.index_networks(filter=f"id|name:{network}")["data"]
+            networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
             filters.append(
                 f"networks[]:{','.join(str(net['network_id']) for net in networks)}"
             )
@@ -698,7 +698,7 @@ def create_connections(network, agents, use_names, json, platform):
         7             | 8
     """
 
-    networks = platform.index_networks(filter=f"id|name:{network}")["data"]
+    networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
     if len(networks) != 1:
         click.secho(f"Could not find the network {network}", err=True, fg="red")
         raise SystemExit(1)
@@ -770,7 +770,7 @@ def get_networks(network, show_secret, skip, take, json, platform):
     By default this command will retrieve up to 42 networks. You can use --take parameter to get more networks.
     """
     networks = platform.index_networks(
-        filter=f"id|name:{network}" if network else None,
+        filter=f"id|name:'{network}'" if network else None,
         skip=skip,
         take=take,
     )["data"]
@@ -917,7 +917,7 @@ def manage_network_endpoints(
     This will also print already existing endpoints for each network.
     """
     networks = platform.index_networks(
-        filter=f"id|name:{network}" if network else None,
+        filter=f"id|name:'{network}'" if network else None,
         skip=skip,
         take=take,
     )["data"]
@@ -933,7 +933,7 @@ def manage_network_endpoints(
         [
             agent["agent_id"]
             for agent in WithRetry(platform.index_agents)(
-                filter=f"name:{endpoint}" if use_names else f"ids[]:{endpoint}",
+                filter=f"name:'{endpoint}'" if use_names else f"ids[]:{endpoint}",
                 load_relations=False,
             )["data"]
         ]
@@ -1019,7 +1019,7 @@ def manage_network_endpoints(
 @syntropy_platform
 def delete_network(network, yes, platform):
     """Delete a network."""
-    networks = platform.index_networks(filter=f"id|name:{network}")["data"]
+    networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
 
     for net in networks:
         if not yes and not confirm_deletion(net["network_name"], net["network_id"]):
