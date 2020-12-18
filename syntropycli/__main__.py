@@ -68,8 +68,6 @@ def get_providers(skip, take, json, api):
     fields = [
         ("ID", "agent_provider_id"),
         ("Name", "agent_provider_name"),
-        ("Created At", "agent_provider_created_at"),
-        ("Updated At", "agent_provider_updated_at"),
     ]
     print_table(providers, fields, to_json=json)
 
