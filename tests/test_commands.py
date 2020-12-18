@@ -730,7 +730,7 @@ def test_manage_network_endpoints__add(runner, agent_name, use_names):
                     assert info_mock.call_count == 2
                     index_mock.assert_called_once_with(
                         mock.ANY,
-                        filter=f"name:{agent_name}"
+                        filter=f"name:'{agent_name}'"
                         if use_names
                         else f"ids[]:{agent_name}",
                         load_relations=False,
@@ -784,7 +784,7 @@ def test_delete_network__multiple(runner, confirm_deletion):
             assert the_mock.call_args_list == [
                 mock.call(mock.ANY, 123),
             ]
-            index_mock.assert_called_once_with(mock.ANY, filter="id|name:test")
+            index_mock.assert_called_once_with(mock.ANY, filter="id|name:'test'")
             assert confirm_deletion.call_count == 2
 
 
@@ -808,5 +808,5 @@ def test_delete_network__multiple_forced(runner, confirm_deletion):
                 mock.call(mock.ANY, 321),
                 mock.call(mock.ANY, 123),
             ]
-            index_mock.assert_called_once_with(mock.ANY, filter="id|name:test")
+            index_mock.assert_called_once_with(mock.ANY, filter="id|name:'test'")
             assert confirm_deletion.call_count == 0
