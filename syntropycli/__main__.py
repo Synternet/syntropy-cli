@@ -11,7 +11,7 @@ from syntropycli.utils import *
 
 @click.group()
 def apis():
-    """Syntropy Networks cli tool"""
+    """Syntropy Networks Command Line Interface."""
 
 
 @apis.command()
@@ -51,14 +51,14 @@ def login(username, password, api):
 
 
 @apis.command()
-@click.option("--skip", default=0, type=int, help="Skip N providers")
-@click.option("--take", default=128, type=int, help="Take N providers")
+@click.option("--skip", default=0, type=int, help="Skip N providers.")
+@click.option("--take", default=128, type=int, help="Take N providers.")
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_api
 def get_providers(skip, take, json, api):
@@ -74,16 +74,16 @@ def get_providers(skip, take, json, api):
 
 @apis.command()
 @click.option(
-    "--show-secret", "-s", is_flag=True, default=False, help="Shows API secrets"
+    "--show-secret", "-s", is_flag=True, default=False, help="Shows API secrets."
 )
-@click.option("--skip", default=0, type=int, help="Skip N API keys")
-@click.option("--take", default=128, type=int, help="Take N API keys")
+@click.option("--skip", default=0, type=int, help="Skip N API keys.")
+@click.option("--take", default=128, type=int, help="Take N API keys.")
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def get_api_keys(show_secret, skip, take, json, platform):
@@ -117,10 +117,10 @@ def get_api_keys(show_secret, skip, take, json, platform):
     type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
 )
-@click.option("--suspended", "-s", is_flag=True, help="Create a suspended API key")
+@click.option("--suspended", "-s", is_flag=True, help="Create a suspended API key.")
 @syntropy_platform
 def create_api_key(name, suspended, expires, platform):
-    """Create a API key."""
+    """Create a API key for endpoint agent."""
     body = {
         "api_key_name": name,
         "api_key_is_suspended": suspended,
@@ -236,32 +236,32 @@ def _get_endpoints(
 
 
 @apis.command()
-@click.option("--name", default=None, type=str, help="Filter endpoints by name")
-@click.option("--id", default=None, type=int, help="Filter endpoints by IDs")
+@click.option("--name", default=None, type=str, help="Filter endpoints by name.")
+@click.option("--id", default=None, type=int, help="Filter endpoints by IDs.")
 @click.option(
-    "--network", default=None, type=str, help="Filter endpoints by network name"
+    "--network", default=None, type=str, help="Filter endpoints by network name."
 )
-@click.option("--tag", default=None, type=str, help="Filter endpoints by tag")
-@click.option("--skip", default=0, type=int, help="Skip N endpoints")
-@click.option("--take", default=42, type=int, help="Take N endpoints")
+@click.option("--tag", default=None, type=str, help="Filter endpoints by tag.")
+@click.option("--skip", default=0, type=int, help="Skip N endpoints.")
+@click.option("--take", default=42, type=int, help="Take N endpoints.")
 @click.option(
     "--show-services",
     is_flag=True,
     default=False,
-    help="Retrieves services that are configured for each endpoint",
+    help="Retrieves services that are configured for each endpoint.",
 )
 @click.option(
-    "--online", is_flag=True, default=False, help="List only online endpoints"
+    "--online", is_flag=True, default=False, help="List only online endpoints."
 )
 @click.option(
-    "--offline", is_flag=True, default=False, help="List only offline endpoints"
+    "--offline", is_flag=True, default=False, help="List only offline endpoints."
 )
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def get_endpoints(
@@ -308,7 +308,7 @@ def get_endpoints(
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @click.option(
     "--set-provider",
@@ -357,7 +357,7 @@ def get_endpoints(
     multiple=True,
     help="Remove a tag from the endpoint(won't affect other tags). Supports multiple options.",
 )
-@click.option("--clear-tags", is_flag=True, default=False, help="Removes all tags")
+@click.option("--clear-tags", is_flag=True, default=False, help="Removes all tags.")
 @click.option(
     "--disable-service",
     "-D",
@@ -372,8 +372,8 @@ def get_endpoints(
 @click.option(
     "--enable-all-services", is_flag=True, default=False, help="Enable all services."
 )
-@click.option("--skip", default=0, type=int, help="Skip N endpoints")
-@click.option("--take", default=42, type=int, help="Take N endpoints")
+@click.option("--skip", default=0, type=int, help="Skip N endpoints.")
+@click.option("--take", default=42, type=int, help="Take N endpoints.")
 @syntropy_platform
 def configure_endpoints(
     platform,
@@ -402,9 +402,9 @@ def configure_endpoints(
 
     \b
     then syntropyctl will:
-        1. clear all tags and add tag1 and tag2
-        2. add tag3 and tag4
-        3. remove tag1
+        1. clear all tags and add tag1 and tag2,
+        2. add tag3 and tag4,
+        3. remove tag1.
 
     The same applies to services.
     """
@@ -537,7 +537,7 @@ def configure_endpoints(
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def get_topology(json, platform):
@@ -557,23 +557,26 @@ def get_topology(json, platform):
 
 @apis.command()
 @click.option(
-    "--network", default=None, type=str, help="Filter connections by network name or ID"
+    "--network",
+    default=None,
+    type=str,
+    help="Filter connections by network name or ID.",
 )
-@click.option("--id", default=None, type=int, help="Filter endpoints by ID")
-@click.option("--skip", default=0, type=int, help="Skip N connections")
-@click.option("--take", default=42, type=int, help="Take N connections")
+@click.option("--id", default=None, type=int, help="Filter endpoints by ID.")
+@click.option("--skip", default=0, type=int, help="Skip N connections.")
+@click.option("--take", default=42, type=int, help="Take N connections.")
 @click.option(
     "--show-services",
     is_flag=True,
     default=False,
-    help="Retrieves services that are configured for each endpoint",
+    help="Retrieves services that are configured for each endpoint.",
 )
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def get_connections(network, id, skip, take, show_services, json, platform):
@@ -669,7 +672,7 @@ def get_connections(network, id, skip, take, show_services, json, platform):
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def create_connections(network, agents, use_names, json, platform):
@@ -677,8 +680,8 @@ def create_connections(network, agents, use_names, json, platform):
 
     \b
     Arguments:
-        network - either a network name or ID
-        agents - a list of endpoint ids or names separated by spaces
+        network - either a network name or ID.
+        agents - a list of endpoint ids or names separated by spaces.
 
     In order to use endpoint names instead of ids provide --use-names option.
 
@@ -748,18 +751,18 @@ def delete_connection(id, platform):
 
 
 @apis.command()
-@click.option("--network", default=None, type=str, help="Filter networks by name/ID")
+@click.option("--network", default=None, type=str, help="Filter networks by name/ID.")
 @click.option(
-    "--show-secret", "-s", is_flag=True, default=False, help="Shows Network secrets"
+    "--show-secret", "-s", is_flag=True, default=False, help="Shows Network secrets."
 )
-@click.option("--skip", default=0, type=int, help="Skip N networks")
-@click.option("--take", default=42, type=int, help="Take N networks")
+@click.option("--skip", default=0, type=int, help="Skip N networks.")
+@click.option("--take", default=42, type=int, help="Take N networks.")
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def get_networks(network, show_secret, skip, take, json, platform):
@@ -889,14 +892,14 @@ def create_network(
     default=False,
     help="Use endpoint names instead of ids. Will not work with name duplicates.",
 )
-@click.option("--skip", default=0, type=int, help="Skip N networks")
-@click.option("--take", default=42, type=int, help="Take N networks")
+@click.option("--skip", default=0, type=int, help="Skip N networks.")
+@click.option("--take", default=42, type=int, help="Take N networks.")
 @click.option(
     "--json",
     "-j",
     is_flag=True,
     default=False,
-    help="Outputs a JSON instead of a table",
+    help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
 def manage_network_endpoints(
