@@ -970,9 +970,10 @@ def manage_network_endpoints(
                 or (agent["agent"]["agent_name"] in remove_endpoint and use_names)
             ]
             if agents:
-                platform.platform_network_agent_destroy(
-                    agents, network["network"]["network_id"]
-                )
+                for agent in agents:
+                    platform.platform_network_agent_destroy(
+                        network["network"]["network_id"], agent
+                    )
                 click.secho(
                     f"Removed {len(agents)} endpoints from network {network['network']['network_name']}.",
                     fg="yellow",

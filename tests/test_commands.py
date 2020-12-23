@@ -653,7 +653,7 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
                     if use_names
                     else ["test", "-r", agent_name],
                 )
-                remove_mock.assert_called_once_with(mock.ANY, [1], 123)
+                remove_mock.assert_called_once_with(mock.ANY, 123, 1)
                 assert info_mock.call_count == 2
 
 
