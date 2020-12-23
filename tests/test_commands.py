@@ -25,7 +25,7 @@ def confirm_deletion():
 def test_login(runner):
     with mock.patch.object(
         ctl.sdk.AuthApi,
-        "local",
+        "auth_local_login",
         autospec=True,
         return_value={"refresh_token": "token"},
     ) as the_mock:
@@ -43,8 +43,8 @@ def test_login(runner):
 
 def test_get_providers(runner, print_table_mock):
     with mock.patch.object(
-        ctl.sdk.AgentProvidersApi,
-        "index",
+        ctl.sdk.PlatformApi,
+        "platform_agent_provider_index",
         autospec=True,
         return_value=[
             {
@@ -78,7 +78,7 @@ def test_get_providers(runner, print_table_mock):
 def test_get_api_keys(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_api_key",
+        "platform_api_key_index",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -90,7 +90,7 @@ def test_get_api_keys(runner, print_table_mock):
 def test_create_api_key(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "create_api_key",
+        "platform_api_key_create",
         autospec=True,
         return_value={"data": {"api_key_id": 123}},
     ) as the_mock:
@@ -109,7 +109,7 @@ def test_create_api_key(runner):
 
 def test_delete_api_key__by_id(runner):
     with mock.patch.object(
-        ctl.sdk.PlatformApi, "delete_api_key", autospec=True
+        ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
     ) as the_mock:
         runner.invoke(ctl.delete_api_key, ["--id", "123"])
         the_mock.assert_called_once_with(mock.ANY, 123)
@@ -118,7 +118,7 @@ def test_delete_api_key__by_id(runner):
 def test_delete_api_key__by_name(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_api_key",
+        "platform_api_key_index",
         autospec=True,
         return_value={
             "data": [
@@ -128,7 +128,7 @@ def test_delete_api_key__by_name(runner, confirm_deletion):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi, "delete_api_key", autospec=True
+            ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
         ) as the_mock:
             runner.invoke(ctl.delete_api_key, ["--name", "test"])
             the_mock.assert_called_once_with(mock.ANY, 123)
@@ -139,7 +139,7 @@ def test_delete_api_key__by_name(runner, confirm_deletion):
 def test_delete_api_key__by_name_force(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_api_key",
+        "platform_api_key_index",
         autospec=True,
         return_value={
             "data": [
@@ -149,7 +149,7 @@ def test_delete_api_key__by_name_force(runner, confirm_deletion):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi, "delete_api_key", autospec=True
+            ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
         ) as the_mock:
             runner.invoke(ctl.delete_api_key, ["--name", "test", "--yes"])
             assert the_mock.call_args_list == [
@@ -163,7 +163,7 @@ def test_delete_api_key__by_name_force(runner, confirm_deletion):
 def test_get_endpoints(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_agents",
+        "platform_agent_index",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -175,7 +175,7 @@ def test_get_endpoints(runner, print_table_mock):
 def test_get_endpoints__with_services(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_agents",
+        "platform_agent_index",
         autospec=True,
         return_value={
             "data": [
@@ -187,7 +187,7 @@ def test_get_endpoints__with_services(runner, print_table_mock):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_agent_services_with_subnets",
+            "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
@@ -200,7 +200,7 @@ def test_get_endpoints__with_services(runner, print_table_mock):
 def test_configure_endpoints__none(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_agents",
+        "platform_agent_index",
         autospec=True,
         return_value={
             "data": [
@@ -212,7 +212,7 @@ def test_configure_endpoints__none(runner, print_table_mock):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_agent_services_with_subnets",
+            "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
@@ -239,7 +239,7 @@ def test_configure_endpoints__none(runner, print_table_mock):
 def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_agents",
+        "platform_agent_index",
         autospec=True,
         return_value={
             "data": [
@@ -252,13 +252,13 @@ def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_agent_services_with_subnets",
+            "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "patch_agents",
+                "platform_agent_update",
                 autospec=True,
             ) as patch_mock:
                 runner.invoke(ctl.configure_endpoints, args)
@@ -293,7 +293,7 @@ def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
 def test_configure_endpoints_services(runner, print_table_mock, args, patch_args):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_agents",
+        "platform_agent_index",
         autospec=True,
         return_value={
             "data": [
@@ -305,7 +305,7 @@ def test_configure_endpoints_services(runner, print_table_mock, args, patch_args
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_agent_services_with_subnets",
+            "platform_agent_service_index",
             autospec=True,
             return_value={
                 "data": [
@@ -338,7 +338,7 @@ def test_configure_endpoints_services(runner, print_table_mock, args, patch_args
         ) as services_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "update_agent_services_subnets_status",
+                "platform_agent_service_subnet_update",
                 autospec=True,
             ) as patch_mock:
                 runner.invoke(ctl.configure_endpoints, args)
@@ -353,7 +353,7 @@ def test_configure_endpoints_services(runner, print_table_mock, args, patch_args
 def test_get_topology(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "topology_networks",
+        "platform_network_topology",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -365,7 +365,7 @@ def test_get_topology(runner, print_table_mock):
 def test_get_connections(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_connections",
+        "platform_connection_index",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -377,13 +377,13 @@ def test_get_connections(runner, print_table_mock):
 def test_get_connections__with_services(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_connections",
+        "platform_connection_index",
         autospec=True,
         return_value={"data": [{"agent_connection_id": 123}]},
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_connection_services",
+            "platform_connection_service_show",
             autospec=True,
             return_value={"data": [{"agent_connection_id": 123}]},
         ) as services_mock:
@@ -396,13 +396,13 @@ def test_get_connections__with_services(runner, print_table_mock):
 def test_create_connections__p2p(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={"data": [{"network_id": 123, "network_type": "POINT_TO_POINT"}]},
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "create_connections",
+            "platform_connection_create",
             autospec=True,
             return_value={"data": []},
         ) as the_mock:
@@ -422,13 +422,13 @@ def test_create_connections__p2p(runner, print_table_mock):
 def test_create_connections__mesh(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={"data": [{"network_id": 123, "network_type": "MESH"}]},
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "create_connections",
+            "platform_connection_create",
             autospec=True,
             return_value={"data": []},
         ) as the_mock:
@@ -448,7 +448,7 @@ def test_create_connections__mesh(runner, print_table_mock):
 def test_create_connections__p2p_by_name(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -462,7 +462,7 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "index_agents",
+            "platform_agent_index",
             autospec=True,
             return_value={
                 "data": [
@@ -473,7 +473,7 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
         ) as index_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "create_connections",
+                "platform_connection_create",
                 autospec=True,
                 return_value={"data": []},
             ) as the_mock:
@@ -495,7 +495,7 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
 
 def test_delete_connection(runner):
     with mock.patch.object(
-        ctl.sdk.PlatformApi, "delete_connection", autospec=True
+        ctl.sdk.PlatformApi, "platform_connection_destroy", autospec=True
     ) as the_mock:
         runner.invoke(ctl.delete_connection, ["123"])
         the_mock.assert_called_once_with(mock.ANY, 123)
@@ -504,7 +504,7 @@ def test_delete_connection(runner):
 def test_get_networks(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -532,7 +532,7 @@ def test_get_networks(runner, print_table_mock):
 def test_create_network(runner, topology, network_type):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "create_network",
+        "platform_network_create",
         autospec=True,
         return_value={"data": {"network_id": 123}},
     ) as the_mock:
@@ -566,7 +566,7 @@ def test_create_network(runner, topology, network_type):
 def test_manage_network_endpoints__show(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -579,7 +579,7 @@ def test_manage_network_endpoints__show(runner):
     ):
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_network_info",
+            "platform_network_info",
             autospec=True,
             return_value={
                 "data": {
@@ -609,7 +609,7 @@ def test_manage_network_endpoints__show(runner):
 def test_manage_network_endpoints__remove(runner, agent_name, use_names):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -622,7 +622,7 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
     ):
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "get_network_info",
+            "platform_network_info",
             autospec=True,
             return_value={
                 "data": {
@@ -644,7 +644,7 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
         ) as info_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "remove_network_agents",
+                "platform_network_agent_destroy",
                 autospec=True,
             ) as remove_mock:
                 runner.invoke(
@@ -661,7 +661,7 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
 def test_manage_network_endpoints__add(runner, agent_name, use_names):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -674,7 +674,7 @@ def test_manage_network_endpoints__add(runner, agent_name, use_names):
     ):
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "index_agents",
+            "platform_agent_index",
             autospec=True,
             return_value={
                 "data": [
@@ -687,7 +687,7 @@ def test_manage_network_endpoints__add(runner, agent_name, use_names):
         ) as index_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "get_network_info",
+                "platform_network_info",
                 autospec=True,
                 return_value={
                     "data": {
@@ -709,7 +709,7 @@ def test_manage_network_endpoints__add(runner, agent_name, use_names):
             ) as info_mock:
                 with mock.patch.object(
                     ctl.sdk.PlatformApi,
-                    "create_network_agents",
+                    "platform_network_agent_create",
                     autospec=True,
                 ) as add_mock:
                     runner.invoke(
@@ -740,7 +740,7 @@ def test_manage_network_endpoints__add(runner, agent_name, use_names):
 def test_create_network__default(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "create_network",
+        "platform_network_create",
         autospec=True,
         return_value={"data": {"network_id": 123}},
     ) as the_mock:
@@ -768,7 +768,7 @@ def test_create_network__default(runner):
 def test_delete_network__multiple(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -778,7 +778,7 @@ def test_delete_network__multiple(runner, confirm_deletion):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi, "delete_networks", autospec=True
+            ctl.sdk.PlatformApi, "platform_network_destroy", autospec=True
         ) as the_mock:
             runner.invoke(ctl.delete_network, ["test"])
             assert the_mock.call_args_list == [
@@ -791,7 +791,7 @@ def test_delete_network__multiple(runner, confirm_deletion):
 def test_delete_network__multiple_forced(runner, confirm_deletion):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "index_networks",
+        "platform_network_index",
         autospec=True,
         return_value={
             "data": [
@@ -801,7 +801,7 @@ def test_delete_network__multiple_forced(runner, confirm_deletion):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi, "delete_networks", autospec=True
+            ctl.sdk.PlatformApi, "platform_network_destroy", autospec=True
         ) as the_mock:
             runner.invoke(ctl.delete_network, ["test", "--yes"])
             assert the_mock.call_args_list == [

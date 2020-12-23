@@ -42,7 +42,7 @@ def login(username, password, api):
     payload = {"user_email": username, "user_password": password, "additionalProp1": {}}
     api = sdk.AuthApi(api)
     try:
-        token = api.local(body=payload)
+        token = api.auth_local_login(body=payload)
         click.echo(token["refresh_token"])
     except ApiException as err:
         click.secho("Login was not successful", err=True, fg="red")
@@ -60,11 +60,10 @@ def login(username, password, api):
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_api
-def get_providers(skip, take, json, api):
+@syntropy_platform
+def get_providers(skip, take, json, platform):
     """Retrieve a list of endpoint providers."""
-    provider = sdk.AgentProvidersApi(api)
-    providers = provider.index(skip=skip, take=take)
+    providers = platform.platform_agent_provider_index(skip=skip, take=take)
     fields = [
         ("ID", "agent_provider_id"),
         ("Name", "agent_provider_name"),
@@ -93,7 +92,7 @@ def get_api_keys(show_secret, skip, take, json, platform):
 
     By default this command will retrieve up to 128 API keys. You can use --take parameter to get more keys.
     """
-    keys = platform.index_api_key(skip=skip, take=take)["data"]
+    keys = platform.platform_api_key_index(skip=skip, take=take)["data"]
 
     fields = [
         ("ID", "api_key_id"),
@@ -126,7 +125,7 @@ def create_api_key(name, suspended, expires, platform):
         "api_key_is_suspended": suspended,
         "api_key_valid_until": expires,
     }
-    result = platform.create_api_key(body=body)
+    result = platform.platform_api_key_create(body=body)
     click.echo(result["data"]["api_key_id"])
 
 
@@ -155,18 +154,18 @@ def delete_api_key(name, id, yes, platform):
         raise SystemExit(1)
 
     if id is None:
-        keys = platform.index_api_key(filter=f"api_key_name:{name}")["data"]
+        keys = platform.platform_api_key_index(filter=f"api_key_name:{name}")["data"]
         for key in keys:
             if not yes and not confirm_deletion(key["api_key_name"], key["api_key_id"]):
                 continue
 
-            platform.delete_api_key(key["api_key_id"])
+            platform.platform_api_key_destroy(key["api_key_id"])
             click.secho(
                 f"Deleted API key: {key['api_key_name']} (id={key['api_key_id']}).",
                 fg="green",
             )
     else:
-        platform.delete_api_key(id)
+        platform.platform_api_key_destroy(id)
         click.secho(f"Deleted API key: id={id}.", fg="green")
 
 
@@ -182,7 +181,7 @@ def _get_endpoints(
         filters.append(f"tags_names[]:{tag}")
     if network:
         filters.append(f"networks_names[]:{network}")
-    agents = platform.index_agents(
+    agents = platform.platform_agent_index(
         filter=",".join(filters) if filters else None, skip=skip, take=take
     )["data"]
 
@@ -195,7 +194,7 @@ def _get_endpoints(
             ]
             if len(filtered_agents) < take:
                 skip += take
-                agents = platform.index_agents(
+                agents = platform.platform_agent_index(
                     filter=",".join(filters) if filters else None, skip=skip, take=take
                 )["data"]
         agents = filtered_agents
@@ -217,7 +216,7 @@ def _get_endpoints(
     if show_services:
         ids = [agent["agent_id"] for agent in agents]
         agents_services = BatchedRequest(
-            platform.get_agent_services_with_subnets,
+            platform.platform_agent_service_index,
             max_payload_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         agent_services = defaultdict(list)
@@ -408,7 +407,7 @@ def configure_endpoints(
 
     The same applies to services.
     """
-    agents = platform.index_agents(
+    agents = platform.platform_agent_index(
         filter=f"id|name:'{endpoint}'",
     )["data"]
 
@@ -439,7 +438,7 @@ def configure_endpoints(
             ) != set(tags):
                 payload["agent_tags"] = tags
             if payload:
-                platform.patch_agents(payload, agent["agent_id"])
+                platform.platform_agent_update(payload, agent["agent_id"])
                 click.secho("Tags and provider configured.", fg="green")
             else:
                 click.secho(
@@ -457,7 +456,7 @@ def configure_endpoints(
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
         agents_services_all = BatchedRequest(
-            platform.get_agent_services_with_subnets,
+            platform.platform_agent_service_index,
             max_payload_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         agents_services = defaultdict(list)
@@ -511,7 +510,7 @@ def configure_endpoints(
             ]
             if subnets:
                 payload = {"subnetsToUpdate": subnets}
-                platform.update_agent_services_subnets_status(payload)
+                platform.platform_agent_service_subnet_update(payload)
                 click.secho("Service subnets updated.", fg="green")
             else:
                 click.secho("Nothing to do for service configuration.", fg="yellow")
@@ -542,7 +541,7 @@ def configure_endpoints(
 @syntropy_platform
 def get_topology(json, platform):
     """Retrieves networks topology."""
-    topology = platform.topology_networks()["data"]
+    topology = platform.platform_network_topology()["data"]
 
     fields = [
         ("Network name", "network_name"),
@@ -599,14 +598,16 @@ def get_connections(network, id, skip, take, show_services, json, platform):
         try:
             filters.append(f"networks[]:{int(network)}")
         except ValueError:
-            networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
+            networks = platform.platform_network_index(filter=f"id|name:'{network}'")[
+                "data"
+            ]
             filters.append(
                 f"networks[]:{','.join(str(net['network_id']) for net in networks)}"
             )
 
     if id:
         filters.append(f"id|name:{id}")
-    connections = platform.index_connections(
+    connections = platform.platform_connection_index(
         filter=",".join(filters) if filters else None,
         skip=skip,
         take=take,
@@ -636,7 +637,8 @@ def get_connections(network, id, skip, take, show_services, json, platform):
     if show_services:
         ids = [connection["agent_connection_id"] for connection in connections]
         connections_services = BatchedRequest(
-            platform.get_connection_services, max_payload_size=MAX_QUERY_FIELD_SIZE
+            platform.platform_connection_service_show,
+            max_payload_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         connection_services = {
             connection["agent_connection_id"]: connection
@@ -699,7 +701,7 @@ def create_connections(network, agents, use_names, json, platform):
         7             | 8
     """
 
-    networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
+    networks = platform.platform_network_index(filter=f"id|name:'{network}'")["data"]
     if len(networks) != 1:
         click.secho(f"Could not find the network {network}", err=True, fg="red")
         raise SystemExit(1)
@@ -707,7 +709,7 @@ def create_connections(network, agents, use_names, json, platform):
     network = networks[0]["network_id"]
     network_type = networks[0]["network_type"]
     if use_names:
-        all_agents = platform.index_agents(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
+        all_agents = platform.platform_agent_index(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
         agents = find_by_name(all_agents, agents, "agent")
         if any(i is None for i in agents):
             raise SystemExit(1)
@@ -729,7 +731,7 @@ def create_connections(network, agents, use_names, json, platform):
         "agent_ids": agents,
         "network_update_by": sdk.NetworkGenesisType.SDK,
     }
-    connections = platform.create_connections(body=body)["data"]
+    connections = platform.platform_connection_create(body=body)["data"]
 
     fields = [
         ("Connection ID", "agent_connection_id"),
@@ -747,7 +749,7 @@ def create_connections(network, agents, use_names, json, platform):
 @syntropy_platform
 def delete_connection(id, platform):
     """Delete a connection."""
-    platform.delete_connection(id)
+    platform.platform_connection_destroy(id)
 
 
 @apis.command()
@@ -770,7 +772,7 @@ def get_networks(network, show_secret, skip, take, json, platform):
 
     By default this command will retrieve up to 42 networks. You can use --take parameter to get more networks.
     """
-    networks = platform.index_networks(
+    networks = platform.platform_network_index(
         filter=f"id|name:'{network}'" if network else None,
         skip=skip,
         take=take,
@@ -868,7 +870,7 @@ def create_network(
             "network_type": topology,
         },
     }
-    result = platform.create_network(body=body)
+    result = platform.platform_network_create(body=body)
     click.echo(result["data"]["network_id"])
 
 
@@ -917,7 +919,7 @@ def manage_network_endpoints(
     You can check what networks match by running manage-network-endpoints command without any -r or -a options.
     This will also print already existing endpoints for each network.
     """
-    networks = platform.index_networks(
+    networks = platform.platform_network_index(
         filter=f"id|name:'{network}'" if network else None,
         skip=skip,
         take=take,
@@ -933,7 +935,7 @@ def manage_network_endpoints(
     resolved_agents = [
         [
             agent["agent_id"]
-            for agent in WithRetry(platform.index_agents)(
+            for agent in WithRetry(platform.platform_agent_index)(
                 filter=f"name:'{endpoint}'" if use_names else f"ids[]:{endpoint}",
                 load_relations=False,
             )["data"]
@@ -954,7 +956,7 @@ def manage_network_endpoints(
         add_agents += agent
 
     networks_info = [
-        platform.get_network_info(net["network_id"])["data"] for net in networks
+        platform.platform_network_info(net["network_id"])["data"] for net in networks
     ]
 
     if remove_endpoint:
@@ -968,7 +970,9 @@ def manage_network_endpoints(
                 or (agent["agent"]["agent_name"] in remove_endpoint and use_names)
             ]
             if agents:
-                platform.remove_network_agents(agents, network["network"]["network_id"])
+                platform.platform_network_agent_destroy(
+                    agents, network["network"]["network_id"]
+                )
                 click.secho(
                     f"Removed {len(agents)} endpoints from network {network['network']['network_name']}.",
                     fg="yellow",
@@ -987,7 +991,7 @@ def manage_network_endpoints(
                     }
                     for agent in agents
                 ]
-                platform.create_network_agents(
+                platform.platform_network_agent_create(
                     payload, network["network"]["network_id"]
                 )
                 click.secho(
@@ -996,7 +1000,8 @@ def manage_network_endpoints(
                 )
     if add_agents or remove_endpoint:
         networks_info = [
-            platform.get_network_info(net["network_id"])["data"] for net in networks
+            platform.platform_network_info(net["network_id"])["data"]
+            for net in networks
         ]
     fields = [
         ("Endpoint ID", ("agent", "agent_id")),
@@ -1020,13 +1025,13 @@ def manage_network_endpoints(
 @syntropy_platform
 def delete_network(network, yes, platform):
     """Delete a network."""
-    networks = platform.index_networks(filter=f"id|name:'{network}'")["data"]
+    networks = platform.platform_network_index(filter=f"id|name:'{network}'")["data"]
 
     for net in networks:
         if not yes and not confirm_deletion(net["network_name"], net["network_id"]):
             continue
 
-        platform.delete_networks(net["network_id"])
+        platform.platform_network_destroy(net["network_id"])
         click.secho(
             f"Deleted network: {net['network_name']} (id={net['network_id']}).",
             fg="green",
