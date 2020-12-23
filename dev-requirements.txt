@@ -9,7 +9,7 @@ attrs==20.3.0             # via pytest
 certifi==2020.12.5        # via -r requirements.txt, syntropy-sdk
 cfgv==3.2.0               # via pre-commit
 click==7.1.2              # via -r requirements.txt
-coverage==5.3             # via -r dev-requirements.in
+coverage==5.3.1           # via -r dev-requirements.in
 distlib==0.3.1            # via virtualenv
 filelock==3.0.12          # via virtualenv
 identify==1.5.10          # via pre-commit
@@ -26,7 +26,7 @@ python-dateutil==2.8.1    # via -r requirements.txt, syntropy-sdk
 pyyaml==5.3.1             # via pre-commit
 randomize==0.14           # via -r dev-requirements.in
 six==1.15.0               # via -r requirements.txt, python-dateutil, syntropy-sdk, virtualenv
-syntropy-sdk==0.1.1       # via -r requirements.txt
+syntropy-sdk==0.1.2       # via -r requirements.txt
 toml==0.10.2              # via pre-commit, pytest
 urllib3==1.26.2           # via -r requirements.txt, syntropy-sdk
 virtualenv==20.2.2        # via pre-commit
