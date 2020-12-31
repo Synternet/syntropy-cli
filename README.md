@@ -4,6 +4,8 @@
 # Syntropy CLI
 Syntropy CLI allows you to manage Syntropy endpoints, networks, and connections using command line interface. 
 
+More information can be found at https://docs.syntropystack.com/docs/syntropyctl
+
 ## Requirements.
 
 Python 3.6+
