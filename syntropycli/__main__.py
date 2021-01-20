@@ -63,7 +63,7 @@ def login(username, password, api):
 @syntropy_platform
 def get_providers(skip, take, json, platform):
     """Retrieve a list of endpoint providers."""
-    providers = platform.platform_agent_provider_index(skip=skip, take=take)
+    providers = platform.platform_agent_provider_index(skip=skip, take=take)["data"]
     fields = [
         ("ID", "agent_provider_id"),
         ("Name", "agent_provider_name"),
