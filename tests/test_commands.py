@@ -46,29 +46,31 @@ def test_get_providers(runner, print_table_mock):
         ctl.sdk.PlatformApi,
         "platform_agent_provider_index",
         autospec=True,
-        return_value=[
-            {
-                "agent_provider_id": 1,
-                "agent_provider_name": "AWS",
-                "agent_provider_tunnels_required": True,
-                "agent_provider_created_at": "2019-12-12T15:51:06.905",
-                "agent_provider_updated_at": "2019-12-12T15:51:06.905",
-            },
-            {
-                "agent_provider_id": 2,
-                "agent_provider_name": "IBM",
-                "agent_provider_tunnels_required": True,
-                "agent_provider_created_at": "2020-01-22T15:50:55.325",
-                "agent_provider_updated_at": "2020-01-22T15:50:55.325",
-            },
-            {
-                "agent_provider_id": 3,
-                "agent_provider_name": "Unknown",
-                "agent_provider_tunnels_required": True,
-                "agent_provider_created_at": "2020-09-21T07:48:50.111",
-                "agent_provider_updated_at": "2020-09-21T07:48:50.111",
-            },
-        ],
+        return_value={
+            "data": [
+                {
+                    "agent_provider_id": 1,
+                    "agent_provider_name": "AWS",
+                    "agent_provider_tunnels_required": True,
+                    "agent_provider_created_at": "2019-12-12T15:51:06.905",
+                    "agent_provider_updated_at": "2019-12-12T15:51:06.905",
+                },
+                {
+                    "agent_provider_id": 2,
+                    "agent_provider_name": "IBM",
+                    "agent_provider_tunnels_required": True,
+                    "agent_provider_created_at": "2020-01-22T15:50:55.325",
+                    "agent_provider_updated_at": "2020-01-22T15:50:55.325",
+                },
+                {
+                    "agent_provider_id": 3,
+                    "agent_provider_name": "Unknown",
+                    "agent_provider_tunnels_required": True,
+                    "agent_provider_created_at": "2020-09-21T07:48:50.111",
+                    "agent_provider_updated_at": "2020-09-21T07:48:50.111",
+                },
+            ],
+        },
     ) as index_mock:
         result = runner.invoke(ctl.get_providers)
         index_mock.assert_called_once()
