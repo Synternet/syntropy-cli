@@ -731,7 +731,9 @@ def create_connections(network, agents, use_names, json, platform):
         "agent_ids": agents,
         "network_update_by": sdk.NetworkGenesisType.SDK,
     }
-    connections = platform.platform_connection_create(body=body)["data"]
+    connections = platform.platform_connection_create(
+        body=body, update_type=sdk.UpdateType.APPEND_NEW
+    )["data"]
 
     fields = [
         ("Connection ID", "agent_connection_id"),

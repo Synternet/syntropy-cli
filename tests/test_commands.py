@@ -417,6 +417,7 @@ def test_create_connections__p2p(runner, print_table_mock):
                     "agent_ids": [(1, 2), (3, 4)],
                     "network_update_by": sdk.NetworkGenesisType.SDK,
                 },
+                update_type=sdk.UpdateType.APPEND_NEW,
             )
             print_table_mock.assert_called_once()
 
@@ -443,6 +444,7 @@ def test_create_connections__mesh(runner, print_table_mock):
                     "agent_ids": [1, 2, 3, 4],
                     "network_update_by": sdk.NetworkGenesisType.SDK,
                 },
+                update_type=sdk.UpdateType.APPEND_NEW,
             )
             print_table_mock.assert_called_once()
 
@@ -491,6 +493,7 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
                         "agent_ids": [(1, 2)],
                         "network_update_by": sdk.NetworkGenesisType.SDK,
                     },
+                    update_type=sdk.UpdateType.APPEND_NEW,
                 )
                 print_table_mock.assert_called_once()
 
