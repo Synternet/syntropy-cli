@@ -429,7 +429,10 @@ def configure_endpoints(
             original_tags = agents_tags.get(agent["agent_id"], [])
             tags = update_list(original_tags, set_tag, add_tag, remove_tag, clear_tags)
             payload = {}
-            if set_provider and set_provider != agent.get("agent_provider", {}).get(
+            current_provider = (
+                agent.get("agent_provider") if agent.get("agent_provider") else {}
+            )
+            if set_provider and set_provider != current_provider.get(
                 "agent_provider_name"
             ):
                 payload["agent_provider_name"] = set_provider
@@ -891,6 +894,12 @@ def create_network(
     help="Remove an endpoint from the network. Supports multiple options.",
 )
 @click.option(
+    "--remove-endpoint-with-connections",
+    "-R",
+    multiple=True,
+    help="Remove an endpoint from the network along with connections to/from it. Supports multiple options.",
+)
+@click.option(
     "--use-names",
     is_flag=True,
     default=False,
@@ -907,7 +916,15 @@ def create_network(
 )
 @syntropy_platform
 def manage_network_endpoints(
-    network, add_endpoint, remove_endpoint, use_names, skip, take, json, platform
+    network,
+    add_endpoint,
+    remove_endpoint,
+    remove_endpoint_with_connections,
+    use_names,
+    skip,
+    take,
+    json,
+    platform,
 ):
     """Add/Remove endpoints to/from a network.
 
@@ -921,6 +938,15 @@ def manage_network_endpoints(
     You can check what networks match by running manage-network-endpoints command without any -r or -a options.
     This will also print already existing endpoints for each network.
     """
+
+    def filter_agents(agent_list, network):
+        return [
+            agent["agent"]["agent_id"]
+            for agent in network["network_agents"]
+            if (str(agent["agent"]["agent_id"]) in agent_list and not use_names)
+            or (agent["agent"]["agent_name"] in agent_list and use_names)
+        ]
+
     networks = platform.platform_network_index(
         filter=f"id|name:'{network}'" if network else None,
         skip=skip,
@@ -961,23 +987,24 @@ def manage_network_endpoints(
         platform.platform_network_info(net["network_id"])["data"] for net in networks
     ]
 
-    if remove_endpoint:
+    if remove_endpoint or remove_endpoint_with_connections:
+        removals = remove_endpoint + remove_endpoint_with_connections
         for network in networks_info:
-            agents = [
-                agent["agent"]["agent_id"]
-                for agent in network["network_agents"]
-                if (
-                    str(agent["agent"]["agent_id"]) in remove_endpoint and not use_names
-                )
-                or (agent["agent"]["agent_name"] in remove_endpoint and use_names)
-            ]
+            agents = filter_agents(removals, network)
+            dc_agents = filter_agents(remove_endpoint_with_connections, network)
             if agents:
-                for agent in agents:
-                    platform.platform_network_agent_destroy(
-                        network["network"]["network_id"], agent
-                    )
+                platform.platform_network_agent_remove(
+                    agents, network["network"]["network_id"]
+                )
                 click.secho(
                     f"Removed {len(agents)} endpoints from network {network['network']['network_name']}.",
+                    fg="yellow",
+                )
+            if dc_agents:
+                for agent in dc_agents:
+                    platform.platform_connection_agent_destroy(agent)
+                click.secho(
+                    f"{len(dc_agents)} endpoints from network {network['network']['network_name']} were removed with connections.",
                     fg="yellow",
                 )
 
@@ -1001,7 +1028,7 @@ def manage_network_endpoints(
                     f"Added {len(agents)} endpoints to network {network['network']['network_name']}.",
                     fg="green",
                 )
-    if add_agents or remove_endpoint:
+    if add_agents or remove_endpoint or remove_endpoint_with_connections:
         networks_info = [
             platform.platform_network_info(net["network_id"])["data"]
             for net in networks

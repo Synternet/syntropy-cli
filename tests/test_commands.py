@@ -238,7 +238,9 @@ def test_configure_endpoints__none(runner, print_table_mock):
         ],
     ],
 )
-def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
+def test_configure_endpoints__tags_providers(
+    runner, print_table_mock, args, patch_args
+):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "platform_agent_index",
@@ -248,7 +250,22 @@ def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
                 {
                     "agent_id": 123,
                     "agent_provider": {"agent_provider_name": "provider"},
-                }
+                },
+                {
+                    "agent_id": 234,
+                    "agent_provider": None,
+                },
+                {
+                    "agent_id": 345,
+                },
+                {
+                    "agent_id": 456,
+                    "agent_provider": {},
+                },
+                {
+                    "agent_id": 567,
+                    "agent_provider": {"agent_provider_name": None},
+                },
             ]
         },
     ) as index_mock:
@@ -265,7 +282,13 @@ def test_configure_endpoints_tags(runner, print_table_mock, args, patch_args):
             ) as patch_mock:
                 runner.invoke(ctl.configure_endpoints, args)
                 assert index_mock.call_count == 2
-                patch_mock.assert_called_once_with(mock.ANY, patch_args, 123)
+                assert patch_mock.call_args_list == [
+                    mock.call(mock.ANY, patch_args, 123),
+                    mock.call(mock.ANY, patch_args, 234),
+                    mock.call(mock.ANY, patch_args, 345),
+                    mock.call(mock.ANY, patch_args, 456),
+                    mock.call(mock.ANY, patch_args, 567),
+                ]
                 assert services_mock.call_count == 0
                 print_table_mock.assert_called_once()
 
@@ -649,7 +672,7 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
         ) as info_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "platform_network_agent_destroy",
+                "platform_network_agent_remove",
                 autospec=True,
             ) as remove_mock:
                 runner.invoke(
@@ -658,8 +681,66 @@ def test_manage_network_endpoints__remove(runner, agent_name, use_names):
                     if use_names
                     else ["test", "-r", agent_name],
                 )
-                remove_mock.assert_called_once_with(mock.ANY, 123, 1)
+                remove_mock.assert_called_once_with(mock.ANY, [1], 123)
                 assert info_mock.call_count == 2
+
+
+@pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
+def test_manage_network_endpoints__remove_delete(runner, agent_name, use_names):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "platform_network_index",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "network_id": 123,
+                    "network_name": "test",
+                }
+            ]
+        },
+    ):
+        with mock.patch.object(
+            ctl.sdk.PlatformApi,
+            "platform_network_info",
+            autospec=True,
+            return_value={
+                "data": {
+                    "network": {
+                        "network_id": 123,
+                        "network_name": "test",
+                    },
+                    "network_agents": [
+                        {
+                            "agent": {
+                                "agent_id": 1,
+                                "agent_name": "agent1",
+                                "agent_public_ipv4": "127.0.0.1",
+                            }
+                        }
+                    ],
+                }
+            },
+        ) as info_mock:
+            with mock.patch.object(
+                ctl.sdk.PlatformApi,
+                "platform_network_agent_remove",
+                autospec=True,
+            ) as remove_mock:
+                with mock.patch.object(
+                    ctl.sdk.PlatformApi,
+                    "platform_connection_agent_destroy",
+                    autospec=True,
+                ) as destroy_mock:
+                    o = runner.invoke(
+                        ctl.manage_network_endpoints,
+                        ["test", "-R", agent_name, "--use-names"]
+                        if use_names
+                        else ["test", "-R", agent_name],
+                    )
+                    remove_mock.assert_called_once_with(mock.ANY, [1], 123)
+                    destroy_mock.assert_called_once_with(mock.ANY, 1)
+                    assert info_mock.call_count == 2
 
 
 @pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
