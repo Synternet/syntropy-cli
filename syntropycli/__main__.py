@@ -548,9 +548,7 @@ def get_topology(json, platform):
 
     fields = [
         ("Network name", "network_name"),
-        ("Network type", "network_type"),
         ("Network ID", "network_id"),
-        ("Gateway ID", "agent_gateway_id"),
         ("N# of endpoints", "network_agents_count"),
         ("N# of connections", "network_agent_connections_count"),
     ]
@@ -622,17 +620,16 @@ def get_connections(network, id, skip, take, show_services, json, platform):
         ("Endpoint 2", ("agent_2", "agent_name")),
         ("IP 2", ("agent_2", "agent_public_ipv4")),
         ("Status", "agent_connection_status"),
-        ("Network name", "network_name"),
-        ("Network type", "network_type"),
-        ("Network ID", ("network", "network_id")),
-        ("Gateway ID", "agent_gateway_id"),
-        ("Created At", "agent_connection_created_at"),
-        ("Modified At", "agent_connection_modified_at"),
-        ("SDN Policy ID", "agent_sdn_policy_id"),
-        ("Link Tag", "agent_connection_link_tag"),
-        ("Last Handshake", "agent_connection_last_handshake"),
-        ("TX total", "agent_connection_tx_bytes_total"),
-        ("RX total", "agent_connection_rx_bytes_total"),
+        ("Modified At", "agent_connection_updated_at"),
+        (
+            "Networks",
+            "networks",
+            lambda networks: ", ".join(
+                str(network.get("network_id", "-")) for network in networks
+            )
+            if networks
+            else "-",
+        ),
         ("Latency", "agent_connection_latency_ms"),
         ("Packet Loss", "agent_connection_packet_loss"),
     ]
@@ -710,7 +707,6 @@ def create_connections(network, agents, use_names, json, platform):
         raise SystemExit(1)
 
     network = networks[0]["network_id"]
-    network_type = networks[0]["network_type"]
     if use_names:
         all_agents = platform.platform_agent_index(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
         agents = find_by_name(all_agents, agents, "agent")
@@ -723,11 +719,10 @@ def create_connections(network, agents, use_names, json, platform):
             click.secho("Invalid agent id", err=True, fg="red")
             raise SystemExit(1)
 
-    if network_type == sdk.NetworkType.POINT_TO_POINT:
-        if len(agents) == 0 or len(agents) % 2 != 0:
-            click.secho("Number of agents must be even.", err=True, fg="red")
-            raise SystemExit(1)
-        agents = list(zip(agents[:-1:2], agents[1::2]))
+    if len(agents) == 0 or len(agents) % 2 != 0:
+        click.secho("Number of agents must be even.", err=True, fg="red")
+        raise SystemExit(1)
+    agents = list(zip(agents[:-1:2], agents[1::2]))
 
     body = {
         "network_id": network,
@@ -784,12 +779,10 @@ def get_networks(network, show_secret, skip, take, json, platform):
     )["data"]
 
     fields = [
+        ("ID", "network_id"),
         ("Organization ID", "organization_id"),
         ("User ID", "user_id"),
-        ("Agent Gateway ID", "agent_gateway_id"),
-        ("Network ID", "network_id"),
         ("Network Name", "network_name"),
-        ("Network Type", "network_type"),
         ("Network Topology", ("network_metadata", "network_type")),
         ("Network Secret", "network_key", lambda x: show_secret and x or "-"),
         (
@@ -808,19 +801,6 @@ def get_networks(network, show_secret, skip, take, json, platform):
 @apis.command()
 @click.argument("name")
 @click.option(
-    "--network-type",
-    default=sdk.NetworkType.POINT_TO_POINT,
-    help="Low level network type.",
-    hidden=True,
-)
-@click.option(
-    "--gateway-id",
-    default=0,
-    type=int,
-    help="Endpoint ID to use as gateway for GATEWAY network type.",
-    hidden=True,
-)
-@click.option(
     "--topology",
     default=sdk.MetadataNetworkType.P2P,
     help="Specifies Network Topology that is used by configure-networks or Ansible playbooks.",
@@ -833,9 +813,7 @@ def get_networks(network, show_secret, skip, take, json, platform):
     hidden=True,
 )
 @syntropy_platform
-def create_network(
-    name, network_type, topology, gateway_id, disable_sdn_connections, platform
-):
+def create_network(name, topology, disable_sdn_connections, platform):
     """Create a network.
 
     Possible network topologies are P2P, P2M, MESH. The network topology is mainly used for
@@ -856,10 +834,6 @@ def create_network(
         syntropyctl create-network MyNetworkName --topology MESH
 
     """
-    if network_type not in ALLOWED_NETWORK_TYPES:
-        click.secho(f"Network type {network_type} is not allowed.", err=True, fg="red")
-        raise SystemExit(1)
-
     topology = topology.upper() if topology else topology
     if topology is not None and topology not in ALLOWED_NETWORK_TOPOLOGIES:
         click.secho(f"Network topology {topology} is not allowed.", err=True, fg="red")
@@ -867,8 +841,6 @@ def create_network(
 
     body = {
         "network_name": name,
-        "network_type": network_type,
-        "agent_gateway_id": gateway_id,
         "network_disable_sdn_connections": disable_sdn_connections,
         "network_metadata": {
             "network_created_by": sdk.NetworkGenesisType.SDK,

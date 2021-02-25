@@ -423,7 +423,7 @@ def test_create_connections__p2p(runner, print_table_mock):
         ctl.sdk.PlatformApi,
         "platform_network_index",
         autospec=True,
-        return_value={"data": [{"network_id": 123, "network_type": "POINT_TO_POINT"}]},
+        return_value={"data": [{"network_id": 123}]},
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
@@ -445,33 +445,6 @@ def test_create_connections__p2p(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def test_create_connections__mesh(runner, print_table_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={"data": [{"network_id": 123, "network_type": "MESH"}]},
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_connection_create",
-            autospec=True,
-            return_value={"data": []},
-        ) as the_mock:
-            runner.invoke(ctl.create_connections, ["123", "1", "2", "3", "4"])
-            index_mock.assert_called_once()
-            the_mock.assert_called_once_with(
-                mock.ANY,
-                body={
-                    "network_id": 123,
-                    "agent_ids": [1, 2, 3, 4],
-                    "network_update_by": sdk.NetworkGenesisType.SDK,
-                },
-                update_type=sdk.UpdateType.APPEND_NEW,
-            )
-            print_table_mock.assert_called_once()
-
-
 def test_create_connections__p2p_by_name(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
@@ -482,7 +455,6 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
                 {
                     "network_id": 123,
                     "network_name": "test",
-                    "network_type": "POINT_TO_POINT",
                 }
             ]
         },
@@ -549,15 +521,7 @@ def test_get_networks(runner, print_table_mock):
         "MESH",
     ],
 )
-@pytest.mark.parametrize(
-    "network_type",
-    [
-        "POINT_TO_POINT",
-        "MESH",
-        "GATEWAY",
-    ],
-)
-def test_create_network(runner, topology, network_type):
+def test_create_network(runner, topology):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "platform_network_create",
@@ -568,20 +532,14 @@ def test_create_network(runner, topology, network_type):
             ctl.create_network,
             [
                 "name",
-                "--network-type",
-                network_type,
                 "--topology",
                 topology,
-                "--gateway-id",
-                "123",
             ],
         )
         the_mock.assert_called_once_with(
             mock.ANY,
             body={
                 "network_name": "name",
-                "network_type": network_type,
-                "agent_gateway_id": 123,
                 "network_disable_sdn_connections": True,
                 "network_metadata": {
                     "network_type": topology,
@@ -840,8 +798,6 @@ def test_create_network__default(runner):
             mock.ANY,
             body={
                 "network_name": "name",
-                "network_type": "POINT_TO_POINT",
-                "agent_gateway_id": 0,
                 "network_disable_sdn_connections": True,
                 "network_metadata": {
                     "network_type": "P2P",
