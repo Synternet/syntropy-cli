@@ -211,32 +211,22 @@ def test_collect_connection_services():
             {
                 "agent_connection_subnet_is_enabled": True,
                 "agent_service_subnet_id": 1,
-                "agent_connection_subnet_status": "PENDING",
+                "agent_connection_subnet_status": "OK",
             },
             {
                 "agent_connection_subnet_is_enabled": True,
                 "agent_service_subnet_id": 2,
-                "agent_connection_subnet_status": "WARNING",
-            },
-            {
-                "agent_connection_subnet_is_enabled": True,
-                "agent_service_subnet_id": 3,
                 "agent_connection_subnet_status": "ERROR",
-            },
-            {
-                "agent_connection_subnet_is_enabled": True,
-                "agent_service_subnet_id": 4,
-                "agent_connection_subnet_status": "CONNECTED",
-            },
-            {
-                "agent_connection_subnet_is_enabled": True,
-                "agent_service_subnet_id": 5,
-                "agent_connection_subnet_status": "OFFLINE",
             },
             {
                 "agent_connection_subnet_is_enabled": True,
                 "agent_service_subnet_id": 6,
                 "agent_connection_subnet_status": "something else",
+            },
+            {
+                "agent_connection_subnet_is_enabled": True,
+                "agent_service_subnet_id": 5,
+                "agent_connection_subnet_status": "PENDING",
             },
             {
                 "agent_connection_subnet_is_enabled": False,
@@ -255,11 +245,6 @@ def test_collect_connection_services():
                     "agent_service_subnet_id": 2,
                     "agent_service_name": "b",
                     "agent_service_subnets": [{"agent_service_subnet_id": 2}],
-                },
-                {
-                    "agent_service_subnet_id": 3,
-                    "agent_service_name": "c",
-                    "agent_service_subnets": [{"agent_service_subnet_id": 3}],
                 },
             ],
         },
@@ -283,11 +268,9 @@ def test_collect_connection_services():
             ],
         },
     }
-    assert "a~" in utils.collect_connection_services(connection_services)
-    assert "b*" in utils.collect_connection_services(connection_services)
-    assert "c!" in utils.collect_connection_services(connection_services)
-    assert "d^" in utils.collect_connection_services(connection_services)
-    assert "e#" in utils.collect_connection_services(connection_services)
+    assert "a^" in utils.collect_connection_services(connection_services)
+    assert "b!" in utils.collect_connection_services(connection_services)
+    assert "e~" in utils.collect_connection_services(connection_services)
     assert "f?" in utils.collect_connection_services(connection_services)
 
 
