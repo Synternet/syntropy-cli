@@ -585,11 +585,9 @@ def get_connections(network, id, skip, take, show_services, json, platform):
     Connection service status is added to the end of the service name with the following possible symbols:
 
     \b
-    ^ - Connection is online.
-    ! - There was an error establishing the connection
-    # - Connection is offline
-    * - Connection is in warning state
-    ~ - Connection is being established
+    ^ - Service is online.
+    ! - There was an error exposing the service
+    ~ - Service is in PENDING state
     ? - Unknown state
 
     By default this command will retrieve up to 42 connections. You can use --take parameter to get more connections.

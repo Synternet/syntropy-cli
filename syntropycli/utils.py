@@ -107,11 +107,9 @@ def collect_endpoint_services(services):
 def collect_connection_services(services):
     service_map = {}
     state_map = {
-        sdk.AgentConnectionStatus.PENDING: "~",
-        sdk.AgentConnectionStatus.WARNING: "*",
-        sdk.AgentConnectionStatus.ERROR: "!",
-        sdk.AgentConnectionStatus.CONNECTED: "^",
-        sdk.AgentConnectionStatus.OFFLINE: "#",
+        "PENDING": "~",
+        "ERROR": "!",
+        "OK": "^",
     }
     for service in (
         services["agent_1"]["agent_services"] + services["agent_2"]["agent_services"]
