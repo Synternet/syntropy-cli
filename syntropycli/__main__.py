@@ -727,19 +727,13 @@ def create_connections(network, agents, use_names, json, platform):
         "agent_ids": agents,
         "network_update_by": sdk.NetworkGenesisType.SDK,
     }
-    connections = platform.platform_connection_create(
+    result = platform.platform_connection_create(
         body=body, update_type=sdk.UpdateType.APPEND_NEW
-    )["data"]
+    )
 
-    fields = [
-        ("Connection ID", "agent_connection_id"),
-        ("Endpoint 1 ID", "agent_1_id"),
-        ("Endpoint 1 WG", "agent_wg_1_id"),
-        ("Endpoint 2 ID", "agent_2_id"),
-        ("Endpoint 2 WG", "agent_wg_2_id"),
-        ("Network ID", "network_id"),
-    ]
-    print_table(connections, fields, to_json=json)
+    if "errors" in result:
+        for error in result["errors"]:
+            click.secho(f"Error: {error.get('message')}", err=True, fg="red")
 
 
 @apis.command()

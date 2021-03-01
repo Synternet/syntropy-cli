@@ -418,7 +418,7 @@ def test_get_connections__with_services(runner, print_table_mock):
             print_table_mock.assert_called_once()
 
 
-def test_create_connections__p2p(runner, print_table_mock):
+def test_create_connections__p2p(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "platform_network_index",
@@ -442,10 +442,38 @@ def test_create_connections__p2p(runner, print_table_mock):
                 },
                 update_type=sdk.UpdateType.APPEND_NEW,
             )
-            print_table_mock.assert_called_once()
 
 
-def test_create_connections__p2p_by_name(runner, print_table_mock):
+def test_create_connections__p2p__fail(runner):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "platform_network_index",
+        autospec=True,
+        return_value={"data": [{"network_id": 123}]},
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.PlatformApi,
+            "platform_connection_create",
+            autospec=True,
+            return_value={"errors": [{"message": "some error"}]},
+        ) as the_mock:
+            result = runner.invoke(ctl.create_connections, ["123", "1", "2", "3", "4"])
+            index_mock.assert_called_once()
+            the_mock.assert_called_once_with(
+                mock.ANY,
+                body={
+                    "network_id": 123,
+                    "agent_ids": [(1, 2), (3, 4)],
+                    "network_update_by": sdk.NetworkGenesisType.SDK,
+                },
+                update_type=sdk.UpdateType.APPEND_NEW,
+            )
+            print(result)
+            print(result.exc_info)
+            assert "some error" in result.output
+
+
+def test_create_connections__p2p_by_name(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
         "platform_network_index",
@@ -490,7 +518,6 @@ def test_create_connections__p2p_by_name(runner, print_table_mock):
                     },
                     update_type=sdk.UpdateType.APPEND_NEW,
                 )
-                print_table_mock.assert_called_once()
 
 
 def test_delete_connection(runner):
