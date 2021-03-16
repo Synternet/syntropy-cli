@@ -25,9 +25,14 @@ def confirm_deletion():
 def test_login(runner):
     with mock.patch.object(
         ctl.sdk.AuthApi,
-        "auth_local_login",
+        "auth_external_login",
         autospec=True,
-        return_value={"refresh_token": "token"},
+        return_value=sdk.AzureUserTokenDto(
+            access_token="token",
+            token_type="token type",
+            expires_in=123,
+            refresh_token="refresh",
+        ),
     ) as the_mock:
         result = runner.invoke(ctl.login, ["username", "password"])
         assert result.stdout.rstrip() == "token"
@@ -36,7 +41,6 @@ def test_login(runner):
             body={
                 "user_email": "username",
                 "user_password": "password",
-                "additionalProp1": {},
             },
         )
 
@@ -427,7 +431,7 @@ def test_create_connections__p2p(runner):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "platform_connection_create",
+            "platform_connection_create_p2p",
             autospec=True,
             return_value={"data": []},
         ) as the_mock:
@@ -437,10 +441,12 @@ def test_create_connections__p2p(runner):
                 mock.ANY,
                 body={
                     "network_id": 123,
-                    "agent_ids": [(1, 2), (3, 4)],
+                    "agent_ids": [
+                        {"agent_1_id": 1, "agent_2_id": 2},
+                        {"agent_1_id": 3, "agent_2_id": 4},
+                    ],
                     "network_update_by": sdk.NetworkGenesisType.SDK,
                 },
-                update_type=sdk.UpdateType.APPEND_NEW,
             )
 
 
@@ -453,7 +459,7 @@ def test_create_connections__p2p__fail(runner):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
-            "platform_connection_create",
+            "platform_connection_create_p2p",
             autospec=True,
             return_value={"errors": [{"message": "some error"}]},
         ) as the_mock:
@@ -463,10 +469,12 @@ def test_create_connections__p2p__fail(runner):
                 mock.ANY,
                 body={
                     "network_id": 123,
-                    "agent_ids": [(1, 2), (3, 4)],
+                    "agent_ids": [
+                        {"agent_1_id": 1, "agent_2_id": 2},
+                        {"agent_1_id": 3, "agent_2_id": 4},
+                    ],
                     "network_update_by": sdk.NetworkGenesisType.SDK,
                 },
-                update_type=sdk.UpdateType.APPEND_NEW,
             )
             print(result)
             print(result.exc_info)
@@ -500,7 +508,7 @@ def test_create_connections__p2p_by_name(runner):
         ) as index_mock:
             with mock.patch.object(
                 ctl.sdk.PlatformApi,
-                "platform_connection_create",
+                "platform_connection_create_p2p",
                 autospec=True,
                 return_value={"data": []},
             ) as the_mock:
@@ -513,10 +521,9 @@ def test_create_connections__p2p_by_name(runner):
                     mock.ANY,
                     body={
                         "network_id": 123,
-                        "agent_ids": [(1, 2)],
+                        "agent_ids": [{"agent_1_id": 1, "agent_2_id": 2}],
                         "network_update_by": sdk.NetworkGenesisType.SDK,
                     },
-                    update_type=sdk.UpdateType.APPEND_NEW,
                 )
 
 

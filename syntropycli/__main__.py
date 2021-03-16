@@ -39,11 +39,11 @@ def login(username, password, api):
         click.secho("Password must be provided", err=True, fg="red")
         raise SystemExit(1)
 
-    payload = {"user_email": username, "user_password": password, "additionalProp1": {}}
+    payload = {"user_email": username, "user_password": password}
     api = sdk.AuthApi(api)
     try:
-        token = api.auth_local_login(body=payload)
-        click.echo(token["refresh_token"])
+        token = api.auth_external_login(body=payload)
+        click.echo(token.access_token)
     except ApiException as err:
         click.secho("Login was not successful", err=True, fg="red")
         click.secho(f"Reason: {str(err)}", err=True, fg="red")
@@ -724,12 +724,10 @@ def create_connections(network, agents, use_names, json, platform):
 
     body = {
         "network_id": network,
-        "agent_ids": agents,
+        "agent_ids": [{"agent_1_id": a, "agent_2_id": b} for a, b in agents],
         "network_update_by": sdk.NetworkGenesisType.SDK,
     }
-    result = platform.platform_connection_create(
-        body=body, update_type=sdk.UpdateType.APPEND_NEW
-    )
+    result = platform.platform_connection_create_p2p(body=body)
 
     if "errors" in result:
         for error in result["errors"]:
