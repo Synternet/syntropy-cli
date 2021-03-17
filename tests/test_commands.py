@@ -531,8 +531,10 @@ def test_delete_connection(runner):
     with mock.patch.object(
         ctl.sdk.PlatformApi, "platform_connection_destroy", autospec=True
     ) as the_mock:
-        runner.invoke(ctl.delete_connection, ["123"])
-        the_mock.assert_called_once_with(mock.ANY, 123)
+        runner.invoke(ctl.delete_connection, ["123", "321"])
+        the_mock.assert_called_once_with(
+            mock.ANY, {"agent_1_id": 123, "agent_2_id": 321}
+        )
 
 
 def test_get_networks(runner, print_table_mock):

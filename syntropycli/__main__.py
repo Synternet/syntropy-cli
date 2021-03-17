@@ -614,8 +614,10 @@ def get_connections(network, id, skip, take, show_services, json, platform):
     fields = [
         ("ID", "agent_connection_id"),
         ("Endpoint 1", ("agent_1", "agent_name")),
+        ("ID 1", ("agent_1", "agent_id")),
         ("IP 1", ("agent_1", "agent_public_ipv4")),
         ("Endpoint 2", ("agent_2", "agent_name")),
+        ("ID 2", ("agent_2", "agent_id")),
         ("IP 2", ("agent_2", "agent_public_ipv4")),
         ("Status", "agent_connection_status"),
         ("Modified At", "agent_connection_updated_at"),
@@ -735,11 +737,17 @@ def create_connections(network, agents, use_names, json, platform):
 
 
 @apis.command()
-@click.argument("id", type=int)
+@click.argument("endpoint-1", type=int)
+@click.argument("endpoint-2", type=int)
 @syntropy_platform
-def delete_connection(id, platform):
+def delete_connection(endpoint_1, endpoint_2, platform):
     """Delete a connection."""
-    platform.platform_connection_destroy(id)
+    platform.platform_connection_destroy(
+        {
+            "agent_1_id": endpoint_1,
+            "agent_2_id": endpoint_2,
+        }
+    )
 
 
 @apis.command()
