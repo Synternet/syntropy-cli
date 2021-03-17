@@ -84,20 +84,23 @@ def get_providers(skip, take, json, platform):
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_platform
-def get_api_keys(show_secret, skip, take, json, platform):
+@syntropy_api
+def get_api_keys(show_secret, skip, take, json, api):
     """List all API keys.
 
     API keys are being used by the endpoint agent to connect to the syntropy platform.
 
     By default this command will retrieve up to 128 API keys. You can use --take parameter to get more keys.
     """
-    keys = platform.platform_api_key_index(skip=skip, take=take)["data"]
+
+    api = sdk.ApiKeysApi(api)
+    keys = api.index_api_key(skip=skip, take=take).data
+    keys = [key.to_dict() for key in keys]
 
     fields = [
-        ("ID", "api_key_id"),
-        ("User ID", "user_id"),
-        ("Key ID", "api_key_id"),
+        ("ID", "api_key_id", lambda x: int(x)),
+        ("User ID", "user_id", lambda x: int(x)),
+        ("Key ID", "api_key_id", lambda x: int(x)),
         ("Key Name", "api_key_name"),
         ("Is Suspended", "api_key_is_suspended", lambda x: x and "Yes" or "No"),
         ("Status", "api_key_status", lambda x: x and "Ok" or "Err"),
@@ -117,16 +120,17 @@ def get_api_keys(show_secret, skip, take, json, platform):
     default=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
 )
 @click.option("--suspended", "-s", is_flag=True, help="Create a suspended API key.")
-@syntropy_platform
-def create_api_key(name, suspended, expires, platform):
+@syntropy_api
+def create_api_key(name, suspended, expires, api):
     """Create a API key for endpoint agent."""
     body = {
         "api_key_name": name,
         "api_key_is_suspended": suspended,
         "api_key_valid_until": expires,
     }
-    result = platform.platform_api_key_create(body=body)
-    click.echo(result["data"]["api_key_id"])
+    api = sdk.ApiKeysApi(api)
+    result = api.create_api_key(body=body)
+    click.echo(result.data.api_key_name)
 
 
 def confirm_deletion(name, id):
@@ -146,26 +150,28 @@ def confirm_deletion(name, id):
     default=False,
     help="Forces to delete all matching networks.",
 )
-@syntropy_platform
-def delete_api_key(name, id, yes, platform):
+@syntropy_api
+def delete_api_key(name, id, yes, api):
     """Delete API key either by name or by id. If there are multiple names - please use id."""
     if name is None and id is None:
         click.secho("Either API key name or id must be specified.", err=True, fg="red")
         raise SystemExit(1)
 
+    api = sdk.ApiKeysApi(api)
+
     if id is None:
-        keys = platform.platform_api_key_index(filter=f"api_key_name:{name}")["data"]
+        keys = api.index_api_key(filter=f"api_key_name:{name}").data
         for key in keys:
-            if not yes and not confirm_deletion(key["api_key_name"], key["api_key_id"]):
+            if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
                 continue
 
-            platform.platform_api_key_destroy(key["api_key_id"])
+            api.delete_api_key(key.api_key_id)
             click.secho(
-                f"Deleted API key: {key['api_key_name']} (id={key['api_key_id']}).",
+                f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",
                 fg="green",
             )
     else:
-        platform.platform_api_key_destroy(id)
+        api.delete_api_key(id)
         click.secho(f"Deleted API key: id={id}.", fg="green")
 
 
@@ -725,7 +731,7 @@ def create_connections(network, agents, use_names, json, platform):
     agents = list(zip(agents[:-1:2], agents[1::2]))
 
     body = {
-        "network_id": network,
+        "network_ids": [network],
         "agent_ids": [{"agent_1_id": a, "agent_2_id": b} for a, b in agents],
         "network_update_by": sdk.NetworkGenesisType.SDK,
     }

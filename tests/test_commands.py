@@ -81,89 +81,48 @@ def test_get_providers(runner, print_table_mock):
         print_table_mock.assert_called_once()
 
 
-def test_get_api_keys(runner, print_table_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_api_key_index",
-        autospec=True,
-        return_value={"data": []},
-    ) as index_mock:
-        runner.invoke(ctl.get_api_keys)
-        index_mock.assert_called_once()
-        print_table_mock.assert_called_once()
+def test_get_api_keys(runner, print_table_mock, mock_index_api_key):
+    runner.invoke(ctl.get_api_keys)
+    mock_index_api_key.assert_called_once()
+    print_table_mock.assert_called_once()
 
 
-def test_create_api_key(runner):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_api_key_create",
-        autospec=True,
-        return_value={"data": {"api_key_id": 123}},
-    ) as the_mock:
-        runner.invoke(
-            ctl.create_api_key, ["name", "2021-10-11 20:20:21", "--suspended"]
-        )
-        the_mock.assert_called_once_with(
-            mock.ANY,
-            body={
-                "api_key_name": "name",
-                "api_key_is_suspended": True,
-                "api_key_valid_until": datetime.datetime(2021, 10, 11, 20, 20, 21),
-            },
-        )
-
-
-def test_delete_api_key__by_id(runner):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
-    ) as the_mock:
-        runner.invoke(ctl.delete_api_key, ["--id", "123"])
-        the_mock.assert_called_once_with(mock.ANY, 123)
-
-
-def test_delete_api_key__by_name(runner, confirm_deletion):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_api_key_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {"api_key_name": "skip", "api_key_id": 321},
-                {"api_key_name": "test", "api_key_id": 123},
-            ]
+def test_create_api_key(runner, mock_create_api_key):
+    runner.invoke(ctl.create_api_key, ["name", "2021-10-11 20:20:21", "--suspended"])
+    mock_create_api_key.assert_called_once_with(
+        mock.ANY,
+        body={
+            "api_key_name": "name",
+            "api_key_is_suspended": True,
+            "api_key_valid_until": datetime.datetime(2021, 10, 11, 20, 20, 21),
         },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
-        ) as the_mock:
-            runner.invoke(ctl.delete_api_key, ["--name", "test"])
-            the_mock.assert_called_once_with(mock.ANY, 123)
-            index_mock.assert_called_once()
-            assert confirm_deletion.call_count == 2
+    )
 
 
-def test_delete_api_key__by_name_force(runner, confirm_deletion):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_api_key_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {"api_key_name": "skip", "api_key_id": 321},
-                {"api_key_name": "test", "api_key_id": 123},
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi, "platform_api_key_destroy", autospec=True
-        ) as the_mock:
-            runner.invoke(ctl.delete_api_key, ["--name", "test", "--yes"])
-            assert the_mock.call_args_list == [
-                mock.call(mock.ANY, 321),
-                mock.call(mock.ANY, 123),
-            ]
-            index_mock.assert_called_once()
-            assert confirm_deletion.call_count == 0
+def test_delete_api_key__by_id(runner, mock_delete_api_key):
+    runner.invoke(ctl.delete_api_key, ["--id", "123"])
+    mock_delete_api_key.assert_called_once_with(mock.ANY, 123)
+
+
+def test_delete_api_key__by_name(
+    runner, confirm_deletion, mock_delete_api_key, mock_index_api_key
+):
+    runner.invoke(ctl.delete_api_key, ["--name", "test"])
+    mock_delete_api_key.assert_called_once_with(mock.ANY, 321)
+    mock_index_api_key.assert_called_once()
+    assert confirm_deletion.call_count == 2
+
+
+def test_delete_api_key__by_name_force(
+    runner, confirm_deletion, mock_delete_api_key, mock_index_api_key
+):
+    runner.invoke(ctl.delete_api_key, ["--name", "test", "--yes"])
+    assert mock_delete_api_key.call_args_list == [
+        mock.call(mock.ANY, 123),
+        mock.call(mock.ANY, 321),
+    ]
+    mock_index_api_key.assert_called_once()
+    assert confirm_deletion.call_count == 0
 
 
 def test_get_endpoints(runner, print_table_mock):
@@ -440,7 +399,7 @@ def test_create_connections__p2p(runner):
             the_mock.assert_called_once_with(
                 mock.ANY,
                 body={
-                    "network_id": 123,
+                    "network_ids": [123],
                     "agent_ids": [
                         {"agent_1_id": 1, "agent_2_id": 2},
                         {"agent_1_id": 3, "agent_2_id": 4},
@@ -468,7 +427,7 @@ def test_create_connections__p2p__fail(runner):
             the_mock.assert_called_once_with(
                 mock.ANY,
                 body={
-                    "network_id": 123,
+                    "network_ids": [123],
                     "agent_ids": [
                         {"agent_1_id": 1, "agent_2_id": 2},
                         {"agent_1_id": 3, "agent_2_id": 4},
@@ -476,8 +435,6 @@ def test_create_connections__p2p__fail(runner):
                     "network_update_by": sdk.NetworkGenesisType.SDK,
                 },
             )
-            print(result)
-            print(result.exc_info)
             assert "some error" in result.output
 
 
@@ -520,7 +477,7 @@ def test_create_connections__p2p_by_name(runner):
                 the_mock.assert_called_once_with(
                     mock.ANY,
                     body={
-                        "network_id": 123,
+                        "network_ids": [123],
                         "agent_ids": [{"agent_1_id": 1, "agent_2_id": 2}],
                         "network_update_by": sdk.NetworkGenesisType.SDK,
                     },

@@ -35,3 +35,61 @@ def print_table_mock():
         autospec=True,
     ) as the_mock:
         yield the_mock
+
+
+@pytest.fixture
+def mock_index_api_key():
+    with mock.patch.object(
+        ctl.sdk.ApiKeysApi,
+        "index_api_key",
+        autospec=True,
+        return_value=ctl.sdk.models.ApiResponseApiKeyObjectArray_(
+            [
+                ctl.sdk.models.ApiKeyObject(
+                    **{
+                        "api_key_name": "skip",
+                        "api_key_id": 123,
+                        "user_id": 1,
+                        "api_key_secret": "secret",
+                    }
+                ),
+                ctl.sdk.models.ApiKeyObject(
+                    **{
+                        "api_key_name": "test",
+                        "api_key_id": 321,
+                        "user_id": 1,
+                        "api_key_secret": "secret",
+                    }
+                ),
+            ]
+        ),
+    ) as index_mock:
+        yield index_mock
+
+
+@pytest.fixture
+def mock_delete_api_key():
+    with mock.patch.object(
+        ctl.sdk.ApiKeysApi, "delete_api_key", autospec=True
+    ) as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
+def mock_create_api_key():
+    with mock.patch.object(
+        ctl.sdk.ApiKeysApi,
+        "create_api_key",
+        autospec=True,
+        return_value=ctl.sdk.models.ApiResponseApiKeyObject_(
+            ctl.sdk.models.ApiKeyObject(
+                **{
+                    "api_key_name": "skip",
+                    "api_key_id": 123,
+                    "user_id": 1,
+                    "api_key_secret": "secret",
+                }
+            )
+        ),
+    ) as the_mock:
+        yield the_mock
