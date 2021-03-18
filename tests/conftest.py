@@ -43,22 +43,28 @@ def mock_index_api_key():
         ctl.sdk.ApiKeysApi,
         "index_api_key",
         autospec=True,
-        return_value=ctl.sdk.models.ApiResponseApiKeyObjectArray_(
+        return_value=ctl.sdk.models.ApiResponseApiKeyDtoArray_(
             [
-                ctl.sdk.models.ApiKeyObject(
+                ctl.sdk.models.ApiKeyDto(
                     **{
                         "api_key_name": "skip",
                         "api_key_id": 123,
                         "user_id": 1,
                         "api_key_secret": "secret",
+                        "api_key_created_at": "date",
+                        "api_key_updated_at": "date",
+                        "api_key_status": "status",
                     }
                 ),
-                ctl.sdk.models.ApiKeyObject(
+                ctl.sdk.models.ApiKeyDto(
                     **{
                         "api_key_name": "test",
                         "api_key_id": 321,
                         "user_id": 1,
                         "api_key_secret": "secret",
+                        "api_key_created_at": "date",
+                        "api_key_updated_at": "date",
+                        "api_key_status": "status",
                     }
                 ),
             ]
@@ -88,6 +94,8 @@ def mock_create_api_key():
                     "api_key_id": 123,
                     "user_id": 1,
                     "api_key_secret": "secret",
+                    "api_key_created_at": "date",
+                    "api_key_updated_at": "date",
                 }
             )
         ),
