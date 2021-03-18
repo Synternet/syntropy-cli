@@ -26,10 +26,10 @@ python-dateutil==2.8.1    # via -r requirements.txt, syntropy-sdk
 pyyaml==5.4.1             # via pre-commit
 randomize==0.14           # via -r dev-requirements.in
 six==1.15.0               # via -r requirements.txt, python-dateutil, syntropy-sdk, virtualenv
-syntropy-sdk==0.1.4       # via -r requirements.txt
+syntropy-sdk==0.1.5       # via -r requirements.txt
 toml==0.10.2              # via pre-commit, pytest
 urllib3==1.26.4           # via -r requirements.txt, syntropy-sdk
-virtualenv==20.4.2        # via pre-commit
+virtualenv==20.4.3        # via pre-commit
 wcwidth==0.2.5            # via -r requirements.txt, prettytable
 
 # The following packages are considered to be unsafe in a requirements file:
