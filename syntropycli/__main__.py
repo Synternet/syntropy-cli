@@ -130,7 +130,7 @@ def create_api_key(name, suspended, expires, api):
     }
     api = sdk.ApiKeysApi(api)
     result = api.create_api_key(body=body)
-    click.echo(result.data.api_key_name)
+    click.echo(result.data.api_key_secret)
 
 
 def confirm_deletion(name, id):
