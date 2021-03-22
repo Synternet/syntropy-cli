@@ -569,6 +569,7 @@ def get_topology(json, platform):
     help="Filter connections by network name or ID.",
 )
 @click.option("--id", default=None, type=int, help="Filter endpoints by ID.")
+@click.option("--name", default=None, type=int, help="Filter endpoints by ID or name.")
 @click.option("--skip", default=0, type=int, help="Skip N connections.")
 @click.option("--take", default=42, type=int, help="Take N connections.")
 @click.option(
@@ -585,7 +586,7 @@ def get_topology(json, platform):
     help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
-def get_connections(network, id, skip, take, show_services, json, platform):
+def get_connections(network, id, name, skip, take, show_services, json, platform):
     """Retrieves network connections.
 
     Connection service status is added to the end of the service name with the following possible symbols:
@@ -610,8 +611,10 @@ def get_connections(network, id, skip, take, show_services, json, platform):
                 f"networks[]:{','.join(str(net['network_id']) for net in networks)}"
             )
 
+    if name:
+        filters.append(f"id|name:{name}")
     if id:
-        filters.append(f"id|name:{id}")
+        filters.append(f"agent_ids[]:{id}")
     connections = platform.platform_connection_index(
         filter=",".join(filters) if filters else None,
         skip=skip,
