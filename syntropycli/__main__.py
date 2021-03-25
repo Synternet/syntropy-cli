@@ -96,8 +96,7 @@ def get_api_keys(skip, take, json, api):
 
     fields = [
         ("ID", "api_key_id", lambda x: int(x)),
-        ("Key ID", "api_key_id", lambda x: int(x)),
-        ("Key Name", "api_key_name"),
+        ("Name", "api_key_name"),
         ("Is Suspended", "api_key_is_suspended", lambda x: x and "Yes" or "No"),
         ("Status", "api_key_status", lambda x: x and "Ok" or "Err"),
         ("Created At", "api_key_created_at"),
