@@ -49,8 +49,6 @@ def mock_index_api_key():
                     **{
                         "api_key_name": "skip",
                         "api_key_id": 123,
-                        "user_id": 1,
-                        "api_key_secret": "secret",
                         "api_key_created_at": "date",
                         "api_key_updated_at": "date",
                         "api_key_status": "status",
@@ -60,8 +58,6 @@ def mock_index_api_key():
                     **{
                         "api_key_name": "test",
                         "api_key_id": 321,
-                        "user_id": 1,
-                        "api_key_secret": "secret",
                         "api_key_created_at": "date",
                         "api_key_updated_at": "date",
                         "api_key_status": "status",

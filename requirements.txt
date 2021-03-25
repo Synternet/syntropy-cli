@@ -9,7 +9,7 @@ click==7.1.2              # via -r requirements.in
 prettytable==2.1.0        # via -r requirements.in
 python-dateutil==2.8.1    # via syntropy-sdk
 six==1.15.0               # via python-dateutil, syntropy-sdk
-syntropy-sdk==0.1.5       # via -r requirements.in
+syntropy-sdk==0.1.6       # via -r requirements.in
 urllib3==1.26.4           # via syntropy-sdk
 wcwidth==0.2.5            # via prettytable
 

@@ -72,9 +72,6 @@ def get_providers(skip, take, json, platform):
 
 
 @apis.command()
-@click.option(
-    "--show-secret", "-s", is_flag=True, default=False, help="Shows API secrets."
-)
 @click.option("--skip", default=0, type=int, help="Skip N API keys.")
 @click.option("--take", default=128, type=int, help="Take N API keys.")
 @click.option(
@@ -85,7 +82,7 @@ def get_providers(skip, take, json, platform):
     help="Outputs a JSON instead of a table.",
 )
 @syntropy_api
-def get_api_keys(show_secret, skip, take, json, api):
+def get_api_keys(skip, take, json, api):
     """List all API keys.
 
     API keys are being used by the endpoint agent to connect to the syntropy platform.
@@ -99,12 +96,10 @@ def get_api_keys(show_secret, skip, take, json, api):
 
     fields = [
         ("ID", "api_key_id", lambda x: int(x)),
-        ("User ID", "user_id", lambda x: int(x)),
         ("Key ID", "api_key_id", lambda x: int(x)),
         ("Key Name", "api_key_name"),
         ("Is Suspended", "api_key_is_suspended", lambda x: x and "Yes" or "No"),
         ("Status", "api_key_status", lambda x: x and "Ok" or "Err"),
-        ("Secret", "api_key_secret", lambda x: show_secret and x or "-"),
         ("Created At", "api_key_created_at"),
         ("Updated At", "api_key_updated_at"),
         ("Expires At", "api_key_valid_until"),
@@ -122,7 +117,10 @@ def get_api_keys(show_secret, skip, take, json, api):
 @click.option("--suspended", "-s", is_flag=True, help="Create a suspended API key.")
 @syntropy_api
 def create_api_key(name, suspended, expires, api):
-    """Create a API key for endpoint agent."""
+    """Create a API key for endpoint agent.
+
+    NOTE: Be sure to remember the API key as it will be only available as a result of this command.
+    """
     body = {
         "api_key_name": name,
         "api_key_is_suspended": suspended,
