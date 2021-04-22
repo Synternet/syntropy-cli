@@ -27,7 +27,7 @@ def test_login(runner):
         ctl.sdk.AuthApi,
         "auth_external_login",
         autospec=True,
-        return_value=sdk.AzureUserTokenDto(
+        return_value=sdk.models.AzureUserTokenDto(
             access_token="token",
             token_type="token type",
             expires_in=123,
@@ -88,12 +88,11 @@ def test_get_api_keys(runner, print_table_mock, mock_index_api_key):
 
 
 def test_create_api_key(runner, mock_create_api_key):
-    runner.invoke(ctl.create_api_key, ["name", "2021-10-11 20:20:21", "--suspended"])
+    runner.invoke(ctl.create_api_key, ["name", "2021-10-11 20:20:21"])
     mock_create_api_key.assert_called_once_with(
         mock.ANY,
         body={
             "api_key_name": "name",
-            "api_key_is_suspended": True,
             "api_key_valid_until": datetime.datetime(2021, 10, 11, 20, 20, 21),
         },
     )

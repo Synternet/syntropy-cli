@@ -91,7 +91,7 @@ def get_api_keys(skip, take, json, api):
     """
 
     api = sdk.ApiKeysApi(api)
-    keys = api.index_api_key(skip=skip, take=take).data
+    keys = api.get_api_key(skip=skip, take=take).data
     keys = [key.to_dict() for key in keys]
 
     fields = [
@@ -113,16 +113,14 @@ def get_api_keys(skip, take, json, api):
     type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
 )
-@click.option("--suspended", "-s", is_flag=True, help="Create a suspended API key.")
 @syntropy_api
-def create_api_key(name, suspended, expires, api):
+def create_api_key(name, expires, api):
     """Create a API key for endpoint agent.
 
     NOTE: Be sure to remember the API key as it will be only available as a result of this command.
     """
     body = {
         "api_key_name": name,
-        "api_key_is_suspended": suspended,
         "api_key_valid_until": expires,
     }
     api = sdk.ApiKeysApi(api)
@@ -157,11 +155,11 @@ def delete_api_key(name, id, yes, api):
     api = sdk.ApiKeysApi(api)
 
     if id is None:
-        keys = api.index_api_key(filter=f"api_key_name:{name}").data
+        keys = api.get_api_key(filter=f"api_key_name:'{name}'").data
         for key in keys:
             if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
                 continue
-
+            print(key, key.api_key_id)
             api.delete_api_key(key.api_key_id)
             click.secho(
                 f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",

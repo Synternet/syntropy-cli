@@ -41,7 +41,7 @@ def print_table_mock():
 def mock_index_api_key():
     with mock.patch.object(
         ctl.sdk.ApiKeysApi,
-        "index_api_key",
+        "get_api_key",
         autospec=True,
         return_value=ctl.sdk.models.ApiResponseApiKeyDtoArray_(
             [
