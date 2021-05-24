@@ -29,22 +29,7 @@ $ export SYNTROPY_API_SERVER={Syntropy Stack API URL}
 $ export SYNTROPY_API_TOKEN={API authorization token}
 ```
 
-In case you have a registered user on the platform you can retrieve the API token using this command(deprecated):
-
-```sh
-$ syntropyctl login {user name} {password}
-{your API authorization token}
-```
-
-You can omit `{password}` on the command line, then the utility will ask you to type the password.
-
-In case you are using SSO to login to the platform the API authorization token can be retrieved from the Platform itself.
-
-Or you can set the `SYNTROPY_API_TOKEN` environment variable like this(Set `SYNTROPY_API_SERVER` to the server address and `SYNTROPY_API_TOKEN` to empty value before that):
-
-```sh
-export SYNTROPY_API_TOKEN=`syntropyctl login {user name} {password}`
-```
+The API authorization token can be retrieved from the Syntropy Stack.
 
 You can learn about the types of actions this utility can perform by running:
 
@@ -71,6 +56,5 @@ Commands:
   get-networks              List all networks.
   get-providers             Retrieve a list of endpoint providers.
   get-topology              Retrieves networks topology.
-  login                     Login with username and password.
   manage-network-endpoints  Add/Remove endpoints to/from a network.
 ```
