@@ -4,33 +4,78 @@
 #
 #    pip-compile dev-requirements.in
 #
-appdirs==1.4.4            # via virtualenv
-attrs==20.3.0             # via pytest
-certifi==2020.12.5        # via -r requirements.txt, syntropy-sdk
-cfgv==3.2.0               # via pre-commit
-click==7.1.2              # via -r requirements.txt
-coverage==5.5             # via -r dev-requirements.in
-distlib==0.3.1            # via virtualenv
-filelock==3.0.12          # via virtualenv
-identify==2.2.1           # via pre-commit
-iniconfig==1.1.1          # via pytest
-nodeenv==1.5.0            # via pre-commit
-packaging==20.9           # via pytest
-pluggy==0.13.1            # via -r dev-requirements.in, pytest
-pre-commit==2.11.1        # via -r dev-requirements.in
-prettytable==2.1.0        # via -r requirements.txt
-py==1.10.0                # via -r dev-requirements.in, pytest
-pyparsing==2.4.7          # via packaging
-pytest==6.2.2             # via -r dev-requirements.in
-python-dateutil==2.8.1    # via -r requirements.txt, syntropy-sdk
-pyyaml==5.4.1             # via pre-commit
-randomize==0.14           # via -r dev-requirements.in
-six==1.15.0               # via -r requirements.txt, python-dateutil, syntropy-sdk, virtualenv
-syntropy-sdk==0.1.6       # via -r requirements.txt
-toml==0.10.2              # via pre-commit, pytest
-urllib3==1.26.4           # via -r requirements.txt, syntropy-sdk
-virtualenv==20.4.3        # via pre-commit
-wcwidth==0.2.5            # via -r requirements.txt, prettytable
+appdirs==1.4.4
+    # via virtualenv
+attrs==20.3.0
+    # via pytest
+certifi==2020.12.5
+    # via
+    #   -r requirements.txt
+    #   syntropy-sdk
+cfgv==3.2.0
+    # via pre-commit
+click==7.1.2
+    # via -r requirements.txt
+coverage==5.5
+    # via -r dev-requirements.in
+distlib==0.3.1
+    # via virtualenv
+filelock==3.0.12
+    # via virtualenv
+identify==2.2.4
+    # via pre-commit
+iniconfig==1.1.1
+    # via pytest
+nodeenv==1.6.0
+    # via pre-commit
+packaging==20.9
+    # via pytest
+pluggy==0.13.1
+    # via
+    #   -r dev-requirements.in
+    #   pytest
+pre-commit==2.12.1
+    # via -r dev-requirements.in
+prettytable==2.1.0
+    # via -r requirements.txt
+py==1.10.0
+    # via
+    #   -r dev-requirements.in
+    #   pytest
+pyparsing==2.4.7
+    # via packaging
+pytest==6.2.3
+    # via -r dev-requirements.in
+python-dateutil==2.8.1
+    # via
+    #   -r requirements.txt
+    #   syntropy-sdk
+pyyaml==5.4.1
+    # via pre-commit
+randomize==0.14
+    # via -r dev-requirements.in
+six==1.15.0
+    # via
+    #   -r requirements.txt
+    #   python-dateutil
+    #   syntropy-sdk
+    #   virtualenv
+syntropy-sdk==0.1.7
+    # via -r requirements.txt
+toml==0.10.2
+    # via
+    #   pre-commit
+    #   pytest
+urllib3==1.26.4
+    # via
+    #   -r requirements.txt
+    #   syntropy-sdk
+virtualenv==20.4.4
+    # via pre-commit
+wcwidth==0.2.5
+    # via
+    #   -r requirements.txt
+    #   prettytable
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

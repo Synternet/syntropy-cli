@@ -15,42 +15,6 @@ def apis():
 
 
 @apis.command()
-@click.argument("username")
-@click.argument("password", default=None, required=False)
-@syntropy_api
-def login(username, password, api):
-    """Login with username and password.
-
-    Will retrieve access token and print it to stdout. You can provide the password as a second parameter
-    or type it when prompted if the password is not provided.
-
-    \b
-    Example:
-        syntropyctl login MyUser@example.com MyPassword
-
-        \b
-        syntropyctl login MyUser@example.com
-        Password: <type your password here>
-    """
-    if not password:
-        password = click.prompt("Password", default=None, hide_input=True)
-
-    if password is None:
-        click.secho("Password must be provided", err=True, fg="red")
-        raise SystemExit(1)
-
-    payload = {"user_email": username, "user_password": password}
-    api = sdk.AuthApi(api)
-    try:
-        token = api.auth_external_login(body=payload)
-        click.echo(token.access_token)
-    except ApiException as err:
-        click.secho("Login was not successful", err=True, fg="red")
-        click.secho(f"Reason: {str(err)}", err=True, fg="red")
-        raise SystemExit(1)
-
-
-@apis.command()
 @click.option("--skip", default=0, type=int, help="Skip N providers.")
 @click.option("--take", default=128, type=int, help="Take N providers.")
 @click.option(

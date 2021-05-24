@@ -22,29 +22,6 @@ def confirm_deletion():
         yield the_mock
 
 
-def test_login(runner):
-    with mock.patch.object(
-        ctl.sdk.AuthApi,
-        "auth_external_login",
-        autospec=True,
-        return_value=sdk.models.AzureUserTokenDto(
-            access_token="token",
-            token_type="token type",
-            expires_in=123,
-            refresh_token="refresh",
-        ),
-    ) as the_mock:
-        result = runner.invoke(ctl.login, ["username", "password"])
-        assert result.stdout.rstrip() == "token"
-        the_mock.assert_called_once_with(
-            mock.ANY,
-            body={
-                "user_email": "username",
-                "user_password": "password",
-            },
-        )
-
-
 def test_get_providers(runner, print_table_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
