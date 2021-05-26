@@ -180,9 +180,9 @@ def _get_endpoints(
 
     if show_services:
         ids = [agent["agent_id"] for agent in agents]
-        agents_services = BatchedRequest(
+        agents_services = BatchedRequestQuery(
             platform.platform_agent_service_index,
-            max_payload_size=MAX_QUERY_FIELD_SIZE,
+            max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         agent_services = defaultdict(list)
         for agent in agents_services:
@@ -423,9 +423,9 @@ def configure_endpoints(
     ):
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
-        agents_services_all = BatchedRequest(
+        agents_services_all = BatchedRequestQuery(
             platform.platform_agent_service_index,
-            max_payload_size=MAX_QUERY_FIELD_SIZE,
+            max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         agents_services = defaultdict(list)
         for agent in agents_services_all:
@@ -604,9 +604,9 @@ def get_connections(network, id, name, skip, take, show_services, json, platform
 
     if show_services:
         ids = [connection["agent_connection_id"] for connection in connections]
-        connections_services = BatchedRequest(
+        connections_services = BatchedRequestQuery(
             platform.platform_connection_service_show,
-            max_payload_size=MAX_QUERY_FIELD_SIZE,
+            max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids)["data"]
         connection_services = {
             connection["agent_connection_id"]: connection

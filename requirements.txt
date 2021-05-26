@@ -6,17 +6,17 @@
 #
 certifi==2020.12.5
     # via syntropy-sdk
-click==7.1.2
+click==8.0.1
     # via -r requirements.in
 prettytable==2.1.0
     # via -r requirements.in
 python-dateutil==2.8.1
     # via syntropy-sdk
-six==1.15.0
+six==1.16.0
     # via
     #   python-dateutil
     #   syntropy-sdk
-syntropy-sdk==0.1.7
+syntropy-sdk==0.1.8
     # via -r requirements.in
 urllib3==1.26.4
     # via syntropy-sdk

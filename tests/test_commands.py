@@ -132,7 +132,8 @@ def test_get_endpoints__with_services(runner, print_table_mock):
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
-            runner.invoke(ctl.get_endpoints, "--show-services")
+            output = runner.invoke(ctl.get_endpoints, "--show-services")
+            print(output)
             index_mock.assert_called_once()
             services_mock.assert_called_once_with(mock.ANY, [123])
             print_table_mock.assert_called_once()
