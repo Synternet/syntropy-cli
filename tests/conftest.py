@@ -10,6 +10,16 @@ from syntropycli import __main__ as ctl
 
 
 @pytest.fixture
+def login_mock():
+    with mock.patch(
+        "syntropycli.decorators.login_with_access_token",
+        autospec=True,
+        returns="JWT access token",
+    ) as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
 def env_mock():
     with mock.patch.dict(
         os.environ, {"SYNTROPY_API_SERVER": "server", "SYNTROPY_API_TOKEN": "token"}
