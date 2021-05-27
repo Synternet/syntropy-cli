@@ -48,6 +48,14 @@ def syntropy_api(func):
             )
             raise SystemExit(1)
 
+        if API_KEY is None:
+            click.secho(
+                f"{EnvVars.API_KEY} environment variable is missing.",
+                err=True,
+                fg="red",
+            )
+            raise SystemExit(1)
+
         config = sdk.Configuration()
         config.host = API_URL
         config.api_key["Authorization"] = login_with_access_token(API_URL, API_KEY)
