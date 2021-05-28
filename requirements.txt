@@ -16,7 +16,7 @@ six==1.16.0
     # via
     #   python-dateutil
     #   syntropy-sdk
-syntropy-sdk==0.1.8
+syntropy-sdk==0.1.9
     # via -r requirements.in
 urllib3==1.26.5
     # via syntropy-sdk
