@@ -37,14 +37,14 @@ def syntropy_api(func):
             )
             raise SystemExit(1)
 
-        config = sdk.Configuration()
-        config.host = API_URL
-        config.api_key["Authorization"] = sdk.utils.login_with_access_token(
-            API_URL, API_KEY
-        )
-        api = sdk.ApiClient(config)
-
         try:
+            config = sdk.Configuration()
+            config.host = API_URL
+            config.api_key["Authorization"] = sdk.utils.login_with_access_token(
+                API_URL, API_KEY
+            )
+            api = sdk.ApiClient(config)
+
             return func(*args, api=api, **kwargs)
         except ApiException as err:
             click.secho("API error occured", err=True, fg="red")
