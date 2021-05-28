@@ -13,25 +13,6 @@ class EnvVars:
     TOKEN = "SYNTROPY_API_TOKEN"
 
 
-def login_with_access_token(url, token):
-    config = sdk.Configuration()
-    config.host = url
-    api = sdk.ApiClient(config)
-    auth = sdk.AuthApi(api)
-
-    body = sdk.models.AccessTokenData(access_token=token)
-    try:
-        response = auth.auth_access_token_login(body)
-        return response.access_token
-    except ApiException as err:
-        click.secho("API error occured", err=True, fg="red")
-        click.secho(f"Reason: {str(err)}", err=True, fg="red")
-        raise SystemExit(2)
-    finally:
-        del auth
-        del api
-
-
 def syntropy_api(func):
     """Helper decorator that injects ApiClient instance into the arguments"""
 
@@ -58,7 +39,9 @@ def syntropy_api(func):
 
         config = sdk.Configuration()
         config.host = API_URL
-        config.api_key["Authorization"] = login_with_access_token(API_URL, API_KEY)
+        config.api_key["Authorization"] = sdk.utils.login_with_access_token(
+            API_URL, API_KEY
+        )
         api = sdk.ApiClient(config)
 
         try:

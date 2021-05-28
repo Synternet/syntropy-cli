@@ -8,22 +8,6 @@ from syntropycli import decorators
 from syntropycli.decorators import *
 
 
-def test_login_with_access_token():
-    with mock.patch.object(
-        sdk.AuthApi,
-        "auth_access_token_login",
-        autospec=True,
-        return_value=sdk.models.AzureUserTokenDto(
-            access_token="token",
-            token_type="bearer",
-            expires_in="whenever",
-            refresh_token="refresh token",
-        ),
-    ) as the_mock:
-        assert "token" == decorators.login_with_access_token("the url", "access token")
-        the_mock.assert_called_once()
-
-
 def test_syntropy_api(env_mock, login_mock):
     func = mock.Mock(return_value="ret")
     decorated = syntropy_api(func)

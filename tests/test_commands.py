@@ -53,7 +53,7 @@ def test_get_providers(runner, print_table_mock, login_mock):
             ],
         },
     ) as index_mock:
-        result = runner.invoke(ctl.get_providers)
+        runner.invoke(ctl.get_providers)
         index_mock.assert_called_once()
         print_table_mock.assert_called_once()
 
