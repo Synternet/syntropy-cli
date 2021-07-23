@@ -317,18 +317,6 @@ def test_configure_endpoints_services(
                 print_table_mock.assert_called_once()
 
 
-def test_get_topology(runner, print_table_mock, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_topology",
-        autospec=True,
-        return_value={"data": []},
-    ) as index_mock:
-        runner.invoke(ctl.get_topology)
-        index_mock.assert_called_once()
-        print_table_mock.assert_called_once()
-
-
 def test_get_connections(runner, print_table_mock, login_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
@@ -363,9 +351,53 @@ def test_get_connections__with_services(runner, print_table_mock, login_mock):
 def test_create_connections__p2p(runner, login_mock):
     with mock.patch.object(
         ctl.sdk.PlatformApi,
-        "platform_network_index",
+        "platform_connection_create_p2p",
         autospec=True,
-        return_value={"data": [{"network_id": 123}]},
+        return_value={"data": []},
+    ) as the_mock:
+        runner.invoke(ctl.create_connections, ["1", "2", "3", "4"])
+        the_mock.assert_called_once_with(
+            mock.ANY,
+            body={
+                "agent_ids": [
+                    {"agent_1_id": 1, "agent_2_id": 2},
+                    {"agent_1_id": 3, "agent_2_id": 4},
+                ],
+            },
+        )
+
+
+def test_create_connections__p2p__fail(runner, login_mock):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "platform_connection_create_p2p",
+        autospec=True,
+        return_value={"errors": [{"message": "some error"}]},
+    ) as the_mock:
+        result = runner.invoke(ctl.create_connections, ["1", "2", "3", "4"])
+        the_mock.assert_called_once_with(
+            mock.ANY,
+            body={
+                "agent_ids": [
+                    {"agent_1_id": 1, "agent_2_id": 2},
+                    {"agent_1_id": 3, "agent_2_id": 4},
+                ],
+            },
+        )
+        assert "some error" in result.output
+
+
+def test_create_connections__p2p_by_name(runner, login_mock):
+    with mock.patch.object(
+        ctl.sdk.PlatformApi,
+        "platform_agent_index",
+        autospec=True,
+        return_value={
+            "data": [
+                {"agent_id": 1, "agent_name": "a"},
+                {"agent_id": 2, "agent_name": "b"},
+            ]
+        },
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.PlatformApi,
@@ -373,94 +405,17 @@ def test_create_connections__p2p(runner, login_mock):
             autospec=True,
             return_value={"data": []},
         ) as the_mock:
-            runner.invoke(ctl.create_connections, ["123", "1", "2", "3", "4"])
+            runner.invoke(
+                ctl.create_connections,
+                ["--use-names", "a", "b"],
+            )
             index_mock.assert_called_once()
             the_mock.assert_called_once_with(
                 mock.ANY,
                 body={
-                    "network_ids": [123],
-                    "agent_ids": [
-                        {"agent_1_id": 1, "agent_2_id": 2},
-                        {"agent_1_id": 3, "agent_2_id": 4},
-                    ],
-                    "network_update_by": sdk.NetworkGenesisType.SDK,
+                    "agent_ids": [{"agent_1_id": 1, "agent_2_id": 2}],
                 },
             )
-
-
-def test_create_connections__p2p__fail(runner, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={"data": [{"network_id": 123}]},
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_connection_create_p2p",
-            autospec=True,
-            return_value={"errors": [{"message": "some error"}]},
-        ) as the_mock:
-            result = runner.invoke(ctl.create_connections, ["123", "1", "2", "3", "4"])
-            index_mock.assert_called_once()
-            the_mock.assert_called_once_with(
-                mock.ANY,
-                body={
-                    "network_ids": [123],
-                    "agent_ids": [
-                        {"agent_1_id": 1, "agent_2_id": 2},
-                        {"agent_1_id": 3, "agent_2_id": 4},
-                    ],
-                    "network_update_by": sdk.NetworkGenesisType.SDK,
-                },
-            )
-            assert "some error" in result.output
-
-
-def test_create_connections__p2p_by_name(runner, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "network_id": 123,
-                    "network_name": "test",
-                }
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_agent_index",
-            autospec=True,
-            return_value={
-                "data": [
-                    {"agent_id": 1, "agent_name": "a"},
-                    {"agent_id": 2, "agent_name": "b"},
-                ]
-            },
-        ) as index_mock:
-            with mock.patch.object(
-                ctl.sdk.PlatformApi,
-                "platform_connection_create_p2p",
-                autospec=True,
-                return_value={"data": []},
-            ) as the_mock:
-                runner.invoke(
-                    ctl.create_connections,
-                    ["--use-names", "test", "a", "b"],
-                )
-                index_mock.assert_called_once()
-                the_mock.assert_called_once_with(
-                    mock.ANY,
-                    body={
-                        "network_ids": [123],
-                        "agent_ids": [{"agent_1_id": 1, "agent_2_id": 2}],
-                        "network_update_by": sdk.NetworkGenesisType.SDK,
-                    },
-                )
 
 
 def test_delete_connection(runner, login_mock):
@@ -471,358 +426,3 @@ def test_delete_connection(runner, login_mock):
         the_mock.assert_called_once_with(
             mock.ANY, {"agent_1_id": 123, "agent_2_id": 321}
         )
-
-
-def test_get_networks(runner, print_table_mock, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={"data": []},
-    ) as index_mock:
-        runner.invoke(ctl.get_networks)
-        index_mock.assert_called_once()
-        print_table_mock.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "topology",
-    [
-        "P2P",
-        "P2M",
-        "MESH",
-    ],
-)
-def test_create_network(runner, topology, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_create",
-        autospec=True,
-        return_value={"data": {"network_id": 123}},
-    ) as the_mock:
-        runner.invoke(
-            ctl.create_network,
-            [
-                "name",
-                "--topology",
-                topology,
-            ],
-        )
-        the_mock.assert_called_once_with(
-            mock.ANY,
-            body={
-                "network_name": "name",
-                "network_disable_sdn_connections": True,
-                "network_metadata": {
-                    "network_type": topology,
-                    "network_created_by": "SDK",
-                },
-            },
-        )
-
-
-def test_manage_network_endpoints__show(runner, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "network_id": 123,
-                    "network_name": "test",
-                }
-            ]
-        },
-    ):
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_network_info",
-            autospec=True,
-            return_value={
-                "data": {
-                    "network": {
-                        "network_id": 123,
-                        "network_name": "test",
-                    },
-                    "network_agents": [
-                        {
-                            "agent": {
-                                "agent_id": 1,
-                                "agent_name": "agent1",
-                                "agent_public_ipv4": "127.0.0.1",
-                            }
-                        }
-                    ],
-                }
-            },
-        ):
-            result = runner.invoke(ctl.manage_network_endpoints, "test")
-            assert "test" in result.output
-            assert "agent1" in result.output
-            assert "127.0.0.1" in result.output
-
-
-@pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
-def test_manage_network_endpoints__remove(runner, agent_name, use_names, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "network_id": 123,
-                    "network_name": "test",
-                }
-            ]
-        },
-    ):
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_network_info",
-            autospec=True,
-            return_value={
-                "data": {
-                    "network": {
-                        "network_id": 123,
-                        "network_name": "test",
-                    },
-                    "network_agents": [
-                        {
-                            "agent": {
-                                "agent_id": 1,
-                                "agent_name": "agent1",
-                                "agent_public_ipv4": "127.0.0.1",
-                            }
-                        }
-                    ],
-                }
-            },
-        ) as info_mock:
-            with mock.patch.object(
-                ctl.sdk.PlatformApi,
-                "platform_network_agent_remove",
-                autospec=True,
-            ) as remove_mock:
-                runner.invoke(
-                    ctl.manage_network_endpoints,
-                    ["test", "-r", agent_name, "--use-names"]
-                    if use_names
-                    else ["test", "-r", agent_name],
-                )
-                remove_mock.assert_called_once_with(mock.ANY, [1], 123)
-                assert info_mock.call_count == 2
-
-
-@pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
-def test_manage_network_endpoints__remove_delete(
-    runner, agent_name, use_names, login_mock
-):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "network_id": 123,
-                    "network_name": "test",
-                }
-            ]
-        },
-    ):
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_network_info",
-            autospec=True,
-            return_value={
-                "data": {
-                    "network": {
-                        "network_id": 123,
-                        "network_name": "test",
-                    },
-                    "network_agents": [
-                        {
-                            "agent": {
-                                "agent_id": 1,
-                                "agent_name": "agent1",
-                                "agent_public_ipv4": "127.0.0.1",
-                            }
-                        }
-                    ],
-                }
-            },
-        ) as info_mock:
-            with mock.patch.object(
-                ctl.sdk.PlatformApi,
-                "platform_network_agent_remove",
-                autospec=True,
-            ) as remove_mock:
-                with mock.patch.object(
-                    ctl.sdk.PlatformApi,
-                    "platform_connection_agent_destroy",
-                    autospec=True,
-                ) as destroy_mock:
-                    o = runner.invoke(
-                        ctl.manage_network_endpoints,
-                        ["test", "-R", agent_name, "--use-names"]
-                        if use_names
-                        else ["test", "-R", agent_name],
-                    )
-                    remove_mock.assert_called_once_with(mock.ANY, [1], 123)
-                    destroy_mock.assert_called_once_with(mock.ANY, 1)
-                    assert info_mock.call_count == 2
-
-
-@pytest.mark.parametrize("agent_name, use_names", [["1", False], ["agent1", True]])
-def test_manage_network_endpoints__add(runner, agent_name, use_names, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "network_id": 123,
-                    "network_name": "test",
-                }
-            ]
-        },
-    ):
-        with mock.patch.object(
-            ctl.sdk.PlatformApi,
-            "platform_agent_index",
-            autospec=True,
-            return_value={
-                "data": [
-                    {
-                        "agent_id": 324,
-                        "agent_name": "agent_name",
-                    }
-                ]
-            },
-        ) as index_mock:
-            with mock.patch.object(
-                ctl.sdk.PlatformApi,
-                "platform_network_info",
-                autospec=True,
-                return_value={
-                    "data": {
-                        "network": {
-                            "network_id": 123,
-                            "network_name": "test",
-                        },
-                        "network_agents": [
-                            {
-                                "agent": {
-                                    "agent_id": 1,
-                                    "agent_name": "agent1",
-                                    "agent_public_ipv4": "127.0.0.1",
-                                }
-                            }
-                        ],
-                    }
-                },
-            ) as info_mock:
-                with mock.patch.object(
-                    ctl.sdk.PlatformApi,
-                    "platform_network_agent_create",
-                    autospec=True,
-                ) as add_mock:
-                    runner.invoke(
-                        ctl.manage_network_endpoints,
-                        ["test", "-a", agent_name, "--use-names"]
-                        if use_names
-                        else ["test", "-a", agent_name],
-                    )
-                    add_mock.assert_called_once_with(
-                        mock.ANY,
-                        [
-                            {
-                                "agent_id": 324,
-                            },
-                        ],
-                        123,
-                    )
-                    assert info_mock.call_count == 2
-                    index_mock.assert_called_once_with(
-                        mock.ANY,
-                        filter=f"name:'{agent_name}'"
-                        if use_names
-                        else f"ids[]:{agent_name}",
-                        load_relations=False,
-                    )
-
-
-def test_create_network__default(runner, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_create",
-        autospec=True,
-        return_value={"data": {"network_id": 123}},
-    ) as the_mock:
-        runner.invoke(
-            ctl.create_network,
-            [
-                "name",
-            ],
-        )
-        the_mock.assert_called_once_with(
-            mock.ANY,
-            body={
-                "network_name": "name",
-                "network_disable_sdn_connections": True,
-                "network_metadata": {
-                    "network_type": "P2P",
-                    "network_created_by": "SDK",
-                },
-            },
-        )
-
-
-def test_delete_network__multiple(runner, confirm_deletion, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {"network_name": "test", "network_id": 321},
-                {"network_name": "test", "network_id": 123},
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi, "platform_network_destroy", autospec=True
-        ) as the_mock:
-            runner.invoke(ctl.delete_network, ["test"])
-            assert the_mock.call_args_list == [
-                mock.call(mock.ANY, 123),
-            ]
-            index_mock.assert_called_once_with(mock.ANY, filter="id|name:'test'")
-            assert confirm_deletion.call_count == 2
-
-
-def test_delete_network__multiple_forced(runner, confirm_deletion, login_mock):
-    with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_network_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {"network_name": "test", "network_id": 321},
-                {"network_name": "test", "network_id": 123},
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.PlatformApi, "platform_network_destroy", autospec=True
-        ) as the_mock:
-            runner.invoke(ctl.delete_network, ["test", "--yes"])
-            assert the_mock.call_args_list == [
-                mock.call(mock.ANY, 321),
-                mock.call(mock.ANY, 123),
-            ]
-            index_mock.assert_called_once_with(mock.ANY, filter="id|name:'test'")
-            assert confirm_deletion.call_count == 0

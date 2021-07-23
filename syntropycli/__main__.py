@@ -107,7 +107,7 @@ def confirm_deletion(name, id):
     "-y",
     is_flag=True,
     default=False,
-    help="Forces to delete all matching networks.",
+    help="Forces to delete all matching keys.",
 )
 @syntropy_api
 def delete_api_key(name, id, yes, api):
@@ -135,7 +135,7 @@ def delete_api_key(name, id, yes, api):
 
 
 def _get_endpoints(
-    name, id, tag, network, skip, take, show_services, online, offline, json, platform
+    name, id, tag, skip, take, show_services, online, offline, json, platform
 ):
     filters = []
     if name:
@@ -144,8 +144,6 @@ def _get_endpoints(
         filters.append(f"ids[]:{id}")
     if tag:
         filters.append(f"tags_names[]:{tag}")
-    if network:
-        filters.append(f"networks_names[]:{network}")
     agents = platform.platform_agent_index(
         filter=",".join(filters) if filters else None, skip=skip, take=take
     )["data"]
@@ -202,9 +200,6 @@ def _get_endpoints(
 @apis.command()
 @click.option("--name", default=None, type=str, help="Filter endpoints by name.")
 @click.option("--id", default=None, type=int, help="Filter endpoints by IDs.")
-@click.option(
-    "--network", default=None, type=str, help="Filter endpoints by network name."
-)
 @click.option("--tag", default=None, type=str, help="Filter endpoints by tag.")
 @click.option("--skip", default=0, type=int, help="Skip N endpoints.")
 @click.option("--take", default=42, type=int, help="Take N endpoints.")
@@ -229,7 +224,7 @@ def _get_endpoints(
 )
 @syntropy_platform
 def get_endpoints(
-    name, id, tag, network, skip, take, show_services, online, offline, json, platform
+    name, id, tag, skip, take, show_services, online, offline, json, platform
 ):
     """List all endpoints.
 
@@ -254,7 +249,6 @@ def get_endpoints(
         name,
         id,
         tag,
-        network,
         skip,
         take,
         show_services,
@@ -487,7 +481,6 @@ def configure_endpoints(
         endpoint,
         None,
         None,
-        None,
         skip,
         take,
         show_services,
@@ -499,34 +492,6 @@ def configure_endpoints(
 
 
 @apis.command()
-@click.option(
-    "--json",
-    "-j",
-    is_flag=True,
-    default=False,
-    help="Outputs a JSON instead of a table.",
-)
-@syntropy_platform
-def get_topology(json, platform):
-    """Retrieves networks topology."""
-    topology = platform.platform_network_topology()["data"]
-
-    fields = [
-        ("Network name", "network_name"),
-        ("Network ID", "network_id"),
-        ("N# of endpoints", "network_agents_count"),
-        ("N# of connections", "network_agent_connections_count"),
-    ]
-    print_table(topology, fields, to_json=json)
-
-
-@apis.command()
-@click.option(
-    "--network",
-    default=None,
-    type=str,
-    help="Filter connections by network name or ID.",
-)
 @click.option("--id", default=None, type=int, help="Filter endpoints by ID.")
 @click.option("--name", default=None, type=int, help="Filter endpoints by ID or name.")
 @click.option("--skip", default=0, type=int, help="Skip N connections.")
@@ -545,8 +510,8 @@ def get_topology(json, platform):
     help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
-def get_connections(network, id, name, skip, take, show_services, json, platform):
-    """Retrieves network connections.
+def get_connections(id, name, skip, take, show_services, json, platform):
+    """Retrieves connections.
 
     Connection service status is added to the end of the service name with the following possible symbols:
 
@@ -559,16 +524,6 @@ def get_connections(network, id, name, skip, take, show_services, json, platform
     By default this command will retrieve up to 42 connections. You can use --take parameter to get more connections.
     """
     filters = []
-    if network:
-        try:
-            filters.append(f"networks[]:{int(network)}")
-        except ValueError:
-            networks = platform.platform_network_index(filter=f"id|name:'{network}'")[
-                "data"
-            ]
-            filters.append(
-                f"networks[]:{','.join(str(net['network_id']) for net in networks)}"
-            )
 
     if name:
         filters.append(f"id|name:{name}")
@@ -589,15 +544,6 @@ def get_connections(network, id, name, skip, take, show_services, json, platform
         ("IP 2", ("agent_2", "agent_public_ipv4")),
         ("Status", "agent_connection_status"),
         ("Modified At", "agent_connection_updated_at"),
-        (
-            "Networks",
-            "networks",
-            lambda networks: ", ".join(
-                str(network.get("network_id", "-")) for network in networks
-            )
-            if networks
-            else "-",
-        ),
         ("Latency", "agent_connection_latency_ms"),
         ("Packet Loss", "agent_connection_packet_loss"),
     ]
@@ -629,13 +575,12 @@ def get_connections(network, id, name, skip, take, show_services, json, platform
 
 
 @apis.command()
-@click.argument("network")
 @click.argument("agents", nargs=-1)
 @click.option(
     "--use-names",
     is_flag=True,
     default=False,
-    help="Use network and endpoint names instead of ids. Will not work with name duplicates.",
+    help="Use endpoint names instead of ids. Will not work with name duplicates.",
 )
 @click.option(
     "--json",
@@ -645,19 +590,18 @@ def get_connections(network, id, name, skip, take, show_services, json, platform
     help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
-def create_connections(network, agents, use_names, json, platform):
+def create_connections(agents, use_names, json, platform):
     """Create connections between endpoints. Number of endpoints must be even.
 
     \b
     Arguments:
-        network - either a network name or ID.
         agents - a list of endpoint ids or names separated by spaces.
 
     In order to use endpoint names instead of ids provide --use-names option.
 
     Example:
 
-        syntropyctl create-connections MyNetworkName 1 2 3 4 5 6 7 8
+        syntropyctl create-connections 1 2 3 4 5 6 7 8
 
         This command will create 4 connections from Endpoint 1 to Endpoint 2 like this:
 
@@ -669,12 +613,6 @@ def create_connections(network, agents, use_names, json, platform):
         7             | 8
     """
 
-    networks = platform.platform_network_index(filter=f"id|name:'{network}'")["data"]
-    if len(networks) != 1:
-        click.secho(f"Could not find the network {network}", err=True, fg="red")
-        raise SystemExit(1)
-
-    network = networks[0]["network_id"]
     if use_names:
         all_agents = platform.platform_agent_index(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
         agents = find_by_name(all_agents, agents, "agent")
@@ -693,9 +631,7 @@ def create_connections(network, agents, use_names, json, platform):
     agents = list(zip(agents[:-1:2], agents[1::2]))
 
     body = {
-        "network_ids": [network],
         "agent_ids": [{"agent_1_id": a, "agent_2_id": b} for a, b in agents],
-        "network_update_by": sdk.NetworkGenesisType.SDK,
     }
     result = platform.platform_connection_create_p2p(body=body)
 
@@ -716,294 +652,6 @@ def delete_connection(endpoint_1, endpoint_2, platform):
             "agent_2_id": endpoint_2,
         }
     )
-
-
-@apis.command()
-@click.option("--network", default=None, type=str, help="Filter networks by name/ID.")
-@click.option(
-    "--show-secret", "-s", is_flag=True, default=False, help="Shows Network secrets."
-)
-@click.option("--skip", default=0, type=int, help="Skip N networks.")
-@click.option("--take", default=42, type=int, help="Take N networks.")
-@click.option(
-    "--json",
-    "-j",
-    is_flag=True,
-    default=False,
-    help="Outputs a JSON instead of a table.",
-)
-@syntropy_platform
-def get_networks(network, show_secret, skip, take, json, platform):
-    """List all networks.
-
-    By default this command will retrieve up to 42 networks. You can use --take parameter to get more networks.
-    """
-    networks = platform.platform_network_index(
-        filter=f"id|name:'{network}'" if network else None,
-        skip=skip,
-        take=take,
-    )["data"]
-
-    fields = [
-        ("ID", "network_id"),
-        ("Organization ID", "organization_id"),
-        ("User ID", "user_id"),
-        ("Network Name", "network_name"),
-        ("Network Topology", ("network_metadata", "network_type")),
-        ("Network Secret", "network_key", lambda x: show_secret and x or "-"),
-        (
-            "SDN Connections",
-            "network_disable_sdn_connections",
-            lambda x: x and "Disabled" or "Enabled",
-        ),
-        ("Created At", "network_created_at"),
-        ("Updated At", "network_updated_at"),
-        ("Created By", ("network_metadata", "network_created_by")),
-        ("Updated By", ("network_metadata", "network_updated_by")),
-    ]
-    print_table(networks, fields, to_json=json)
-
-
-@apis.command()
-@click.argument("name")
-@click.option(
-    "--topology",
-    default=sdk.MetadataNetworkType.P2P,
-    help="Specifies Network Topology that is used by configure-networks or Ansible playbooks.",
-)
-@click.option(
-    "--disable-sdn-connections",
-    is_flag=True,
-    default=True,
-    help="Disable SDN connections. Default is disable.",
-    hidden=True,
-)
-@syntropy_platform
-def create_network(name, topology, disable_sdn_connections, platform):
-    """Create a network.
-
-    Possible network topologies are P2P, P2M, MESH. The network topology is mainly used for
-    Network as Code usage scenarious.
-
-    \b
-    P2P - used to configure the network using endpoint pairs.
-    P2M - used to configure the network when one endpoint connects to many endpoints.
-    MESH - used to configure the network where every endpoint is connected to every other endpoint.
-
-    \b
-    Examples:
-        # Create a network with P2P topology
-        syntropyctl create-network MyNetworkName
-
-    \b
-        # Create a network with MESH topology
-        syntropyctl create-network MyNetworkName --topology MESH
-
-    """
-    topology = topology.upper() if topology else topology
-    if topology is not None and topology not in ALLOWED_NETWORK_TOPOLOGIES:
-        click.secho(f"Network topology {topology} is not allowed.", err=True, fg="red")
-        raise SystemExit(1)
-
-    body = {
-        "network_name": name,
-        "network_disable_sdn_connections": disable_sdn_connections,
-        "network_metadata": {
-            "network_created_by": sdk.NetworkGenesisType.SDK,
-            "network_type": topology,
-        },
-    }
-    result = platform.platform_network_create(body=body)
-    click.echo(result["data"]["network_id"])
-
-
-@apis.command()
-@click.argument("network")
-@click.option(
-    "--add-endpoint",
-    "-a",
-    multiple=True,
-    help="Add an endpoint to the network. Supports multiple options.",
-)
-@click.option(
-    "--remove-endpoint",
-    "-r",
-    multiple=True,
-    help="Remove an endpoint from the network. Supports multiple options.",
-)
-@click.option(
-    "--remove-endpoint-with-connections",
-    "-R",
-    multiple=True,
-    help="Remove an endpoint from the network along with connections to/from it. Supports multiple options.",
-)
-@click.option(
-    "--use-names",
-    is_flag=True,
-    default=False,
-    help="Use endpoint names instead of ids. Will not work with name duplicates.",
-)
-@click.option("--skip", default=0, type=int, help="Skip N networks.")
-@click.option("--take", default=42, type=int, help="Take N networks.")
-@click.option(
-    "--json",
-    "-j",
-    is_flag=True,
-    default=False,
-    help="Outputs a JSON instead of a table.",
-)
-@syntropy_platform
-def manage_network_endpoints(
-    network,
-    add_endpoint,
-    remove_endpoint,
-    remove_endpoint_with_connections,
-    use_names,
-    skip,
-    take,
-    json,
-    platform,
-):
-    """Add/Remove endpoints to/from a network.
-
-    This command first removes and then adds endpoints if -r and -a are used together.
-    It is possible to add/remove endpoints for multiple networks if they share the same name, for example:
-
-        syntropyctl manage-network-endpoints My-Network-
-
-    will match `My-Network-DNS`, `My-Network-Test`, `Another-My-Network` and so on.
-
-    You can check what networks match by running manage-network-endpoints command without any -r or -a options.
-    This will also print already existing endpoints for each network.
-    """
-
-    def filter_agents(agent_list, network):
-        return [
-            agent["agent"]["agent_id"]
-            for agent in network["network_agents"]
-            if (str(agent["agent"]["agent_id"]) in agent_list and not use_names)
-            or (agent["agent"]["agent_name"] in agent_list and use_names)
-        ]
-
-    networks = platform.platform_network_index(
-        filter=f"id|name:'{network}'" if network else None,
-        skip=skip,
-        take=take,
-    )["data"]
-    if not networks:
-        click.secho(
-            f"Could not find a network by id/name {network}.", err=True, fg="red"
-        )
-        raise SystemExit(1)
-    else:
-        click.secho(f"Found {len(networks)} networks.", fg="green")
-
-    resolved_agents = [
-        [
-            agent["agent_id"]
-            for agent in WithRetry(platform.platform_agent_index)(
-                filter=f"name:'{endpoint}'" if use_names else f"ids[]:{endpoint}",
-                load_relations=False,
-            )["data"]
-        ]
-        for endpoint in add_endpoint
-    ]
-
-    add_agents = []
-    for endpoint, agent in zip(add_endpoint, resolved_agents):
-        if len(agent) == 0:
-            click.secho(f"Endpoint {endpoint} could not be found.")
-            raise SystemExit(1)
-        elif len(agent) != 1:
-            click.secho(
-                f"Multiple endpoints found for {endpoint}: {','.join(str(i) for i in agent)}"
-            )
-            raise SystemExit(1)
-        add_agents += agent
-
-    networks_info = [
-        platform.platform_network_info(net["network_id"])["data"] for net in networks
-    ]
-
-    if remove_endpoint or remove_endpoint_with_connections:
-        removals = remove_endpoint + remove_endpoint_with_connections
-        for network in networks_info:
-            agents = filter_agents(removals, network)
-            dc_agents = filter_agents(remove_endpoint_with_connections, network)
-            if agents:
-                platform.platform_network_agent_remove(
-                    agents, network["network"]["network_id"]
-                )
-                click.secho(
-                    f"Removed {len(agents)} endpoints from network {network['network']['network_name']}.",
-                    fg="yellow",
-                )
-            if dc_agents:
-                for agent in dc_agents:
-                    platform.platform_connection_agent_destroy(agent)
-                click.secho(
-                    f"{len(dc_agents)} endpoints from network {network['network']['network_name']} were removed with connections.",
-                    fg="yellow",
-                )
-
-    if add_agents:
-        for network in networks_info:
-            agent_ids = [
-                agent["agent"]["agent_id"] for agent in network["network_agents"]
-            ]
-            agents = [id for id in add_agents if id not in agent_ids]
-            if agents:
-                payload = [
-                    {
-                        "agent_id": agent,
-                    }
-                    for agent in agents
-                ]
-                platform.platform_network_agent_create(
-                    payload, network["network"]["network_id"]
-                )
-                click.secho(
-                    f"Added {len(agents)} endpoints to network {network['network']['network_name']}.",
-                    fg="green",
-                )
-    if add_agents or remove_endpoint or remove_endpoint_with_connections:
-        networks_info = [
-            platform.platform_network_info(net["network_id"])["data"]
-            for net in networks
-        ]
-    fields = [
-        ("Endpoint ID", ("agent", "agent_id")),
-        ("Endpoint Name", ("agent", "agent_name")),
-        ("Public IPv4", ("agent", "agent_public_ipv4")),
-    ]
-    for network in networks_info:
-        click.secho(f"Network: {network['network']['network_name']}:", fg="green")
-        print_table(network["network_agents"], fields, to_json=json)
-
-
-@apis.command()
-@click.argument("network")
-@click.option(
-    "--yes",
-    "-y",
-    is_flag=True,
-    default=False,
-    help="Forces to delete all matching networks.",
-)
-@syntropy_platform
-def delete_network(network, yes, platform):
-    """Delete a network."""
-    networks = platform.platform_network_index(filter=f"id|name:'{network}'")["data"]
-
-    for net in networks:
-        if not yes and not confirm_deletion(net["network_name"], net["network_id"]):
-            continue
-
-        platform.platform_network_destroy(net["network_id"])
-        click.secho(
-            f"Deleted network: {net['network_name']} (id={net['network_id']}).",
-            fg="green",
-        )
 
 
 def main():
