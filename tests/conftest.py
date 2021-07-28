@@ -107,3 +107,27 @@ def mock_create_api_key():
         ),
     ) as the_mock:
         yield the_mock
+
+
+@pytest.fixture
+def mock_get_rules():
+    with mock.patch.object(
+        ctl.sdk.RulesApi, "connection_point_to_tag_show_by_id", autospec=True
+    ) as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
+def mock_create_rules():
+    with mock.patch.object(
+        ctl.sdk.RulesApi, "connection_point_to_tag_create", autospec=True
+    ) as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
+def mock_delete_rules():
+    with mock.patch.object(
+        ctl.sdk.RulesApi, "connection_point_to_tag_remove", autospec=True
+    ) as the_mock:
+        yield the_mock

@@ -123,8 +123,7 @@ def delete_api_key(name, id, yes, api):
         for key in keys:
             if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
                 continue
-            print(key, key.api_key_id)
-            api.delete_api_key(key.api_key_id)
+            api.delete_api_key(int(key.api_key_id))
             click.secho(
                 f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",
                 fg="green",
@@ -575,7 +574,7 @@ def get_connections(id, name, skip, take, show_services, json, platform):
 
 
 @apis.command()
-@click.argument("agents", nargs=-1)
+@click.argument("endpoints", nargs=-1)
 @click.option(
     "--use-names",
     is_flag=True,
@@ -590,12 +589,12 @@ def get_connections(id, name, skip, take, show_services, json, platform):
     help="Outputs a JSON instead of a table.",
 )
 @syntropy_platform
-def create_connections(agents, use_names, json, platform):
+def create_connections(endpoints, use_names, json, platform):
     """Create connections between endpoints. Number of endpoints must be even.
 
     \b
     Arguments:
-        agents - a list of endpoint ids or names separated by spaces.
+        endpoints - a list of endpoint ids or names separated by spaces.
 
     In order to use endpoint names instead of ids provide --use-names option.
 
@@ -615,12 +614,12 @@ def create_connections(agents, use_names, json, platform):
 
     if use_names:
         all_agents = platform.platform_agent_index(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
-        agents = find_by_name(all_agents, agents, "agent")
+        agents = find_by_name(all_agents, endpoints, "agent")
         if any(i is None for i in agents):
             raise SystemExit(1)
     else:
         try:
-            agents = [int(i) for i in agents]
+            agents = [int(i) for i in endpoints]
         except ValueError:
             click.secho("Invalid agent id", err=True, fg="red")
             raise SystemExit(1)
@@ -652,6 +651,127 @@ def delete_connection(endpoint_1, endpoint_2, platform):
             "agent_2_id": endpoint_2,
         }
     )
+
+
+@apis.command()
+@click.argument("endpoints", nargs=-1)
+@click.option(
+    "--use-names",
+    is_flag=True,
+    default=False,
+    help="Use endpoint names instead of ids. Will not work with name duplicates.",
+)
+@click.option(
+    "--json",
+    "-j",
+    is_flag=True,
+    default=False,
+    help="Outputs a JSON instead of a table.",
+)
+@syntropy_platform
+@syntropy_rules
+def get_rule(rules, platform, endpoints, use_names, json):
+    """Get connection rules."""
+    fields = [
+        ("Endpoint ID", "id"),
+        ("Endpoint Name", "name"),
+        ("Tags", "tags"),
+    ]
+    results = []
+    for agent in endpoints:
+        if use_names:
+            agent_list = platform.platform_agent_index(
+                filter=f"id|name:'{agent}'",
+            )["data"]
+            ids = [
+                (int(agent["agent_id"]), agent["agent_name"]) for agent in agent_list
+            ]
+        else:
+            ids = [(int(agent), None)]
+
+        for id, name in ids:
+            rule = rules.connection_point_to_tag_show_by_id(id).data
+            results.append(
+                {
+                    "id": rule.agent_id,
+                    "name": name,
+                    "tags": rule.tag_names,
+                }
+            )
+
+    print_table(results, fields, to_json=json)
+
+
+@apis.command()
+@click.argument("endpoint")
+@click.argument("tags", nargs=-1)
+@click.option(
+    "--use-names",
+    is_flag=True,
+    default=False,
+    help="Use endpoint names instead of ids. Will not work with name duplicates.",
+)
+@click.option(
+    "--json",
+    "-j",
+    is_flag=True,
+    default=False,
+    help="Outputs a JSON instead of a table.",
+)
+@syntropy_platform
+@syntropy_rules
+def create_rule(rules, platform, endpoint, tags, use_names, json):
+    """Create connection rules."""
+    if use_names:
+        agent_list = platform.platform_agent_index(
+            filter=f"id|name:'{endpoint}'",
+        )["data"]
+        ids = [int(agent["agent_id"]) for agent in agent_list]
+    else:
+        ids = [int(endpoint)]
+
+    for id in ids:
+        body = {
+            "agent_id": id,
+            "tag_names": tags,
+        }
+        rules.connection_point_to_tag_create(body)
+
+
+@apis.command()
+@click.argument("endpoint")
+@click.argument("tags", nargs=-1)
+@click.option(
+    "--use-names",
+    is_flag=True,
+    default=False,
+    help="Use endpoint names instead of ids. Will not work with name duplicates.",
+)
+@click.option(
+    "--json",
+    "-j",
+    is_flag=True,
+    default=False,
+    help="Outputs a JSON instead of a table.",
+)
+@syntropy_platform
+@syntropy_rules
+def delete_rule(rules, platform, endpoint, tags, use_names, json):
+    """Delete connection rules."""
+    if use_names:
+        agent_list = platform.platform_agent_index(
+            filter=f"id|name:'{endpoint}'",
+        )["data"]
+        ids = [int(agent["agent_id"]) for agent in agent_list]
+    else:
+        ids = [int(endpoint)]
+
+    for id in ids:
+        body = {
+            "agent_id": id,
+            "tag_names": tags,
+        }
+        rules.connection_point_to_tag_remove(body)
 
 
 def main():
