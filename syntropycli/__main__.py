@@ -493,7 +493,7 @@ def configure_endpoints(
 
 @apis.command()
 @click.option("--id", default=None, type=int, help="Filter endpoints by ID.")
-@click.option("--name", default=None, type=int, help="Filter endpoints by ID or name.")
+@click.option("--name", default=None, type=str, help="Filter endpoints by ID or name.")
 @click.option("--skip", default=0, type=int, help="Skip N connections.")
 @click.option("--take", default=42, type=int, help="Take N connections.")
 @click.option(
