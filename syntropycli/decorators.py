@@ -69,24 +69,3 @@ def syntropy_platform(func):
         return func(*args, platform=api, **kwargs)
 
     return syntropy_api(wrapper)
-
-
-def syntropy_rules(func):
-    """Helper decorator that injects RulesApi instance into the arguments"""
-
-    @functools.wraps(func)
-    def wrapper(*args, api=None, **kwargs):
-        if os.environ.get(EnvVars.TOKEN) is None:
-            click.secho(
-                f"{EnvVars.TOKEN} environment variable is missing.",
-                err=True,
-                fg="yellow",
-            )
-        # NOTE: This is required due to rules microservice limitations
-        api.configuration.api_key["Authorization"] = (
-            "Bearer " + api.configuration.api_key["Authorization"]
-        )
-        api = sdk.RulesApi(api)
-        return func(*args, rules=api, **kwargs)
-
-    return syntropy_api(wrapper)

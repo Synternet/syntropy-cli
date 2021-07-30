@@ -43,16 +43,13 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  configure-endpoints  Configures an endpoint with provided provider, tags.
-  create-api-key       Create a API key for endpoint agent.
-  create-connections   Create connections between endpoints.
-  create-rule          Create connection rules.
-  delete-api-key       Delete API key either by name or by id.
-  delete-connection    Delete a connection.
-  delete-rule          Delete connection rules.
-  get-api-keys         List all API keys.
-  get-connections      Retrieves connections.
-  get-endpoints        List all endpoints.
-  get-providers        Retrieve a list of endpoint providers.
-  get-rule             Get connection rules.
+  configure-endpoints       Configures an endpoint with provided provider,...
+  create-api-key            Create a API key.
+  create-connections        Create connections between endpoints.
+  delete-api-key            Delete API key either by name or by id.
+  delete-connection         Delete a connection.
+  get-api-keys              List all API keys.
+  get-connections           Retrieves connections.
+  get-endpoints             List all endpoints.
+  get-providers             Retrieve a list of endpoint providers.
 ```
