@@ -24,7 +24,7 @@ def confirm_deletion():
 
 def test_get_providers(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.AgentsApi,
+        sdk.AgentsApi,
         "platform_agent_provider_index",
         autospec=True,
         return_value={
@@ -54,7 +54,7 @@ def test_get_providers(runner, print_table_mock, login_mock):
         },
     ) as index_mock:
         run = runner.invoke(ctl.get_providers)
-        print(run)
+        print(run, run.output)
         index_mock.assert_called_once()
         print_table_mock.assert_called_once()
 
