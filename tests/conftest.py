@@ -28,7 +28,7 @@ def env_mock():
 
 
 @pytest.fixture
-def runner():
+def runner(env_mock):
     return CliRunner()
 
 
