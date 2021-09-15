@@ -12,7 +12,7 @@ certifi==2021.5.30
     # via
     #   -r requirements.txt
     #   syntropy-sdk
-cfgv==3.3.0
+cfgv==3.3.1
     # via pre-commit
 click==8.0.1
     # via -r requirements.txt
@@ -22,7 +22,7 @@ distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==2.2.11
+identify==2.2.14
     # via pre-commit
 iniconfig==1.1.1
     # via pytest
@@ -30,15 +30,15 @@ nodeenv==1.6.0
     # via pre-commit
 packaging==21.0
     # via pytest
-platformdirs==2.0.2
+platformdirs==2.3.0
     # via virtualenv
-pluggy==0.13.1
+pluggy==1.0.0
     # via
     #   -r dev-requirements.in
     #   pytest
-pre-commit==2.13.0
+pre-commit==2.15.0
     # via -r dev-requirements.in
-prettytable==2.1.0
+prettytable==2.2.0
     # via -r requirements.txt
 py==1.10.0
     # via
@@ -46,7 +46,7 @@ py==1.10.0
     #   pytest
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via -r dev-requirements.in
 python-dateutil==2.8.2
     # via
@@ -62,7 +62,7 @@ six==1.16.0
     #   python-dateutil
     #   syntropy-sdk
     #   virtualenv
-syntropy-sdk==0.2.0
+syntropy-sdk==0.3.0
     # via -r requirements.txt
 toml==0.10.2
     # via
@@ -72,7 +72,7 @@ urllib3==1.26.6
     # via
     #   -r requirements.txt
     #   syntropy-sdk
-virtualenv==20.6.0
+virtualenv==20.7.2
     # via pre-commit
 wcwidth==0.2.5
     # via

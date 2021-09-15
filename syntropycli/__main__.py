@@ -24,10 +24,13 @@ def apis():
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_platform
-def get_providers(skip, take, json, platform):
+@syntropy_api
+def get_providers(skip, take, json, api):
     """Retrieve a list of endpoint providers."""
-    providers = platform.platform_agent_provider_index(skip=skip, take=take)["data"]
+    api = sdk.AgentsApi(api)
+    providers = WithPagination(api.platform_agent_provider_index)(
+        skip=skip, take=take, _preload_content=False
+    )["data"]
     fields = [
         ("ID", "agent_provider_id"),
         ("Name", "agent_provider_name"),
@@ -54,9 +57,10 @@ def get_api_keys(skip, take, json, api):
     By default this command will retrieve up to 128 API keys. You can use --take parameter to get more keys.
     """
 
-    api = sdk.ApiKeysApi(api)
-    keys = api.get_api_key(skip=skip, take=take).data
-    keys = [key.to_dict() for key in keys]
+    api = sdk.APIKeysApi(api)
+    keys = WithPagination(api.get_api_key)(
+        skip=skip, take=take, _preload_content=False
+    )["data"]
 
     fields = [
         ("ID", "api_key_id", lambda x: int(x)),
@@ -87,7 +91,7 @@ def create_api_key(name, expires, api):
         "api_key_name": name,
         "api_key_valid_until": expires,
     }
-    api = sdk.ApiKeysApi(api)
+    api = sdk.APIKeysApi(api)
     result = api.create_api_key(body=body)
     click.echo(result.data.api_key_secret)
 
@@ -116,14 +120,13 @@ def delete_api_key(name, id, yes, api):
         click.secho("Either API key name or id must be specified.", err=True, fg="red")
         raise SystemExit(1)
 
-    api = sdk.ApiKeysApi(api)
+    api = sdk.APIKeysApi(api)
 
     if id is None:
         keys = api.get_api_key(filter=f"api_key_name:'{name}'").data
         for key in keys:
             if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
                 continue
-            print(key, key.api_key_id)
             api.delete_api_key(key.api_key_id)
             click.secho(
                 f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",
@@ -135,7 +138,7 @@ def delete_api_key(name, id, yes, api):
 
 
 def _get_endpoints(
-    name, id, tag, skip, take, show_services, online, offline, json, platform
+    name, id, tag, skip, take, show_services, online, offline, json, api
 ):
     filters = []
     if name:
@@ -144,8 +147,11 @@ def _get_endpoints(
         filters.append(f"ids[]:{id}")
     if tag:
         filters.append(f"tags_names[]:{tag}")
-    agents = platform.platform_agent_index(
-        filter=",".join(filters) if filters else None, skip=skip, take=take
+    agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
+        filter=",".join(filters) if filters else None,
+        skip=skip,
+        take=take,
+        _preload_content=False,
     )["data"]
 
     if online or offline:
@@ -157,8 +163,11 @@ def _get_endpoints(
             ]
             if len(filtered_agents) < take:
                 skip += take
-                agents = platform.platform_agent_index(
-                    filter=",".join(filters) if filters else None, skip=skip, take=take
+                agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
+                    filter=",".join(filters) if filters else None,
+                    skip=skip,
+                    take=take,
+                    _preload_content=False,
                 )["data"]
         agents = filtered_agents
 
@@ -179,9 +188,9 @@ def _get_endpoints(
     if show_services:
         ids = [agent["agent_id"] for agent in agents]
         agents_services = BatchedRequestQuery(
-            platform.platform_agent_service_index,
+            sdk.ServicesApi(api).platform_agent_service_index,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids)["data"]
+        )(ids, _preload_content=False)["data"]
         agent_services = defaultdict(list)
         for agent in agents_services:
             agent_services[agent["agent_id"]].append(agent)
@@ -222,10 +231,8 @@ def _get_endpoints(
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_platform
-def get_endpoints(
-    name, id, tag, skip, take, show_services, online, offline, json, platform
-):
+@syntropy_api
+def get_endpoints(name, id, tag, skip, take, show_services, online, offline, json, api):
     """List all endpoints.
 
     By default this command will retrieve up to 42 endpoints. You can use --take parameter to get more endpoints.
@@ -255,7 +262,7 @@ def get_endpoints(
         online,
         offline,
         json,
-        platform,
+        api,
     )
 
 
@@ -332,9 +339,9 @@ def get_endpoints(
 )
 @click.option("--skip", default=0, type=int, help="Skip N endpoints.")
 @click.option("--take", default=42, type=int, help="Take N endpoints.")
-@syntropy_platform
+@syntropy_api
 def configure_endpoints(
-    platform,
+    api,
     endpoint,
     set_provider,
     set_tag,
@@ -366,8 +373,9 @@ def configure_endpoints(
 
     The same applies to services.
     """
-    agents = platform.platform_agent_index(
+    agents = sdk.AgentsApi(api).platform_agent_index(
         filter=f"id|name:'{endpoint}'",
+        _preload_content=False,
     )["data"]
 
     if not agents:
@@ -400,7 +408,7 @@ def configure_endpoints(
             ) != set(tags):
                 payload["agent_tags"] = tags
             if payload:
-                platform.platform_agent_update(payload, agent["agent_id"])
+                sdk.AgentsApi(api).platform_agent_update(payload, agent["agent_id"])
                 click.secho("Tags and provider configured.", fg="green")
             else:
                 click.secho(
@@ -415,12 +423,13 @@ def configure_endpoints(
         or enable_all_services
         or disable_all_services
     ):
+        service_api = sdk.ServicesApi(api)
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
         agents_services_all = BatchedRequestQuery(
-            platform.platform_agent_service_index,
+            service_api.platform_agent_service_index,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids)["data"]
+        )(ids, _preload_content=False)["data"]
         agents_services = defaultdict(list)
         for agent in agents_services_all:
             agents_services[agent["agent_id"]].append(agent)
@@ -472,7 +481,7 @@ def configure_endpoints(
             ]
             if subnets:
                 payload = {"subnetsToUpdate": subnets}
-                platform.platform_agent_service_subnet_update(payload)
+                service_api.platform_agent_service_subnet_update(payload)
                 click.secho("Service subnets updated.", fg="green")
             else:
                 click.secho("Nothing to do for service configuration.", fg="yellow")
@@ -487,7 +496,7 @@ def configure_endpoints(
         None,
         None,
         json,
-        platform,
+        api,
     )
 
 
@@ -509,8 +518,8 @@ def configure_endpoints(
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_platform
-def get_connections(id, name, skip, take, show_services, json, platform):
+@syntropy_api
+def get_connections(id, name, skip, take, show_services, json, api):
     """Retrieves connections.
 
     Connection service status is added to the end of the service name with the following possible symbols:
@@ -529,40 +538,45 @@ def get_connections(id, name, skip, take, show_services, json, platform):
         filters.append(f"id|name:{name}")
     if id:
         filters.append(f"agent_ids[]:{id}")
-    connections = platform.platform_connection_index(
+    connections = WithPagination(
+        sdk.ConnectionsApi(api).platform_connection_groups_index
+    )(
         filter=",".join(filters) if filters else None,
         skip=skip,
         take=take,
-    )["data"]
+        _preload_content=False,
+    )[
+        "data"
+    ]
     fields = [
-        ("ID", "agent_connection_id"),
+        ("ID", "agent_connection_group_id"),
         ("Endpoint 1", ("agent_1", "agent_name")),
         ("ID 1", ("agent_1", "agent_id")),
         ("IP 1", ("agent_1", "agent_public_ipv4")),
         ("Endpoint 2", ("agent_2", "agent_name")),
         ("ID 2", ("agent_2", "agent_id")),
         ("IP 2", ("agent_2", "agent_public_ipv4")),
-        ("Status", "agent_connection_status"),
-        ("Modified At", "agent_connection_updated_at"),
+        ("Status", "agent_connection_group_status"),
+        ("Modified At", "agent_connection_group_updated_at"),
         ("Latency", "agent_connection_latency_ms"),
         ("Packet Loss", "agent_connection_packet_loss"),
     ]
 
     if show_services:
-        ids = [connection["agent_connection_id"] for connection in connections]
+        ids = [connection["agent_connection_group_id"] for connection in connections]
         connections_services = BatchedRequestQuery(
-            platform.platform_connection_service_show,
+            sdk.ServicesApi(api).platform_connection_service_show,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids)["data"]
+        )(ids, _preload_content=False)["data"]
         connection_services = {
-            connection["agent_connection_id"]: connection
+            connection["agent_connection_group_id"]: connection
             for connection in connections_services
         }
         connections = [
             {
                 **connection,
                 "agent_connection_services": connection_services[
-                    connection["agent_connection_id"]
+                    connection["agent_connection_group_id"]
                 ],
             }
             for connection in connections
@@ -589,8 +603,8 @@ def get_connections(id, name, skip, take, show_services, json, platform):
     default=False,
     help="Outputs a JSON instead of a table.",
 )
-@syntropy_platform
-def create_connections(agents, use_names, json, platform):
+@syntropy_api
+def create_connections(agents, use_names, json, api):
     """Create connections between endpoints. Number of endpoints must be even.
 
     \b
@@ -614,7 +628,9 @@ def create_connections(agents, use_names, json, platform):
     """
 
     if use_names:
-        all_agents = platform.platform_agent_index(take=TAKE_MAX_ITEMS_PER_CALL)["data"]
+        all_agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
+            _preload_content=False
+        )["data"]
         agents = find_by_name(all_agents, agents, "agent")
         if any(i is None for i in agents):
             raise SystemExit(1)
@@ -633,9 +649,9 @@ def create_connections(agents, use_names, json, platform):
     body = {
         "agent_ids": [{"agent_1_id": a, "agent_2_id": b} for a, b in agents],
     }
-    result = platform.platform_connection_create_p2p(body=body)
+    result = sdk.ConnectionsApi(api).platform_connection_create_p2p(body=body)
 
-    if "errors" in result:
+    if result and "errors" in result:
         for error in result["errors"]:
             click.secho(f"Error: {error.get('message')}", err=True, fg="red")
 
@@ -643,10 +659,10 @@ def create_connections(agents, use_names, json, platform):
 @apis.command()
 @click.argument("endpoint-1", type=int)
 @click.argument("endpoint-2", type=int)
-@syntropy_platform
-def delete_connection(endpoint_1, endpoint_2, platform):
+@syntropy_api
+def delete_connection(endpoint_1, endpoint_2, api):
     """Delete a connection."""
-    platform.platform_connection_destroy(
+    sdk.ConnectionsApi(api).platform_connections_destroy_deprecated(
         {
             "agent_1_id": endpoint_1,
             "agent_2_id": endpoint_2,

@@ -24,7 +24,7 @@ def confirm_deletion():
 
 def test_get_providers(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_provider_index",
         autospec=True,
         return_value={
@@ -103,7 +103,7 @@ def test_delete_api_key__by_name_force(
 
 def test_get_endpoints(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={"data": []},
@@ -115,7 +115,7 @@ def test_get_endpoints(runner, print_table_mock, login_mock):
 
 def test_get_endpoints__with_services(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={
@@ -127,21 +127,23 @@ def test_get_endpoints__with_services(runner, print_table_mock, login_mock):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ServicesApi,
             "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
             output = runner.invoke(ctl.get_endpoints, "--show-services")
-            print(output)
+            print(output.output)
             index_mock.assert_called_once()
-            services_mock.assert_called_once_with(mock.ANY, [123])
+            services_mock.assert_called_once_with(
+                mock.ANY, [123], _preload_content=False
+            )
             print_table_mock.assert_called_once()
 
 
 def test_configure_endpoints__none(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={
@@ -153,7 +155,7 @@ def test_configure_endpoints__none(runner, print_table_mock, login_mock):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ServicesApi,
             "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
@@ -182,7 +184,7 @@ def test_configure_endpoints__tags_providers(
     runner, print_table_mock, args, patch_args, login_mock
 ):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={
@@ -210,13 +212,13 @@ def test_configure_endpoints__tags_providers(
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ServicesApi,
             "platform_agent_service_index",
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
             with mock.patch.object(
-                ctl.sdk.PlatformApi,
+                ctl.sdk.AgentsApi,
                 "platform_agent_update",
                 autospec=True,
             ) as patch_mock:
@@ -259,7 +261,7 @@ def test_configure_endpoints_services(
     runner, print_table_mock, args, patch_args, login_mock
 ):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={
@@ -271,7 +273,7 @@ def test_configure_endpoints_services(
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ServicesApi,
             "platform_agent_service_index",
             autospec=True,
             return_value={
@@ -304,7 +306,7 @@ def test_configure_endpoints_services(
             },
         ) as services_mock:
             with mock.patch.object(
-                ctl.sdk.PlatformApi,
+                ctl.sdk.ServicesApi,
                 "platform_agent_service_subnet_update",
                 autospec=True,
             ) as patch_mock:
@@ -319,8 +321,8 @@ def test_configure_endpoints_services(
 
 def test_get_connections(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_connection_index",
+        ctl.sdk.ConnectionsApi,
+        "platform_connection_groups_index",
         autospec=True,
         return_value={"data": []},
     ) as index_mock:
@@ -331,26 +333,28 @@ def test_get_connections(runner, print_table_mock, login_mock):
 
 def test_get_connections__with_services(runner, print_table_mock, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
-        "platform_connection_index",
+        ctl.sdk.ConnectionsApi,
+        "platform_connection_groups_index",
         autospec=True,
-        return_value={"data": [{"agent_connection_id": 123}]},
+        return_value={"data": [{"agent_connection_group_id": 123}]},
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ServicesApi,
             "platform_connection_service_show",
             autospec=True,
-            return_value={"data": [{"agent_connection_id": 123}]},
+            return_value={"data": [{"agent_connection_group_id": 123}]},
         ) as services_mock:
-            runner.invoke(ctl.get_connections, "--show-services")
+            res = runner.invoke(ctl.get_connections, "--show-services")
             index_mock.assert_called_once()
-            services_mock.assert_called_once_with(mock.ANY, [123])
+            services_mock.assert_called_once_with(
+                mock.ANY, [123], _preload_content=False
+            )
             print_table_mock.assert_called_once()
 
 
 def test_create_connections__p2p(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.ConnectionsApi,
         "platform_connection_create_p2p",
         autospec=True,
         return_value={"data": []},
@@ -369,7 +373,7 @@ def test_create_connections__p2p(runner, login_mock):
 
 def test_create_connections__p2p__fail(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.ConnectionsApi,
         "platform_connection_create_p2p",
         autospec=True,
         return_value={"errors": [{"message": "some error"}]},
@@ -389,7 +393,7 @@ def test_create_connections__p2p__fail(runner, login_mock):
 
 def test_create_connections__p2p_by_name(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi,
+        ctl.sdk.AgentsApi,
         "platform_agent_index",
         autospec=True,
         return_value={
@@ -400,7 +404,7 @@ def test_create_connections__p2p_by_name(runner, login_mock):
         },
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.PlatformApi,
+            ctl.sdk.ConnectionsApi,
             "platform_connection_create_p2p",
             autospec=True,
             return_value={"data": []},
@@ -420,7 +424,7 @@ def test_create_connections__p2p_by_name(runner, login_mock):
 
 def test_delete_connection(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.PlatformApi, "platform_connection_destroy", autospec=True
+        ctl.sdk.ConnectionsApi, "platform_connections_destroy_deprecated", autospec=True
     ) as the_mock:
         runner.invoke(ctl.delete_connection, ["123", "321"])
         the_mock.assert_called_once_with(

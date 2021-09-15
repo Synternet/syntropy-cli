@@ -52,20 +52,3 @@ def syntropy_api(func):
             raise SystemExit(2)
 
     return wrapper
-
-
-def syntropy_platform(func):
-    """Helper decorator that injects PlatformApi instance into the arguments"""
-
-    @functools.wraps(func)
-    def wrapper(*args, api=None, **kwargs):
-        if os.environ.get(EnvVars.TOKEN) is None:
-            click.secho(
-                f"{EnvVars.TOKEN} environment variable is missing.",
-                err=True,
-                fg="yellow",
-            )
-        api = sdk.PlatformApi(api)
-        return func(*args, platform=api, **kwargs)
-
-    return syntropy_api(wrapper)

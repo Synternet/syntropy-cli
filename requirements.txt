@@ -8,7 +8,7 @@ certifi==2021.5.30
     # via syntropy-sdk
 click==8.0.1
     # via -r requirements.in
-prettytable==2.1.0
+prettytable==2.2.0
     # via -r requirements.in
 python-dateutil==2.8.2
     # via syntropy-sdk
@@ -16,7 +16,7 @@ six==1.16.0
     # via
     #   python-dateutil
     #   syntropy-sdk
-syntropy-sdk==0.2.0
+syntropy-sdk==0.3.0
     # via -r requirements.in
 urllib3==1.26.6
     # via syntropy-sdk

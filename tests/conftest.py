@@ -28,13 +28,7 @@ def env_mock():
 
 
 @pytest.fixture
-def api_lock_fix(env_mock):
-    # NOTE: We don't restore __del__ for api client since there is a known issue with locking pool.
-    ctl.sdk.ApiClient.__del__ = lambda x: x
-
-
-@pytest.fixture
-def runner(api_lock_fix):
+def runner():
     return CliRunner()
 
 
@@ -50,7 +44,7 @@ def print_table_mock():
 @pytest.fixture
 def mock_index_api_key():
     with mock.patch.object(
-        ctl.sdk.ApiKeysApi,
+        ctl.sdk.APIKeysApi,
         "get_api_key",
         autospec=True,
         return_value=ctl.sdk.models.ApiResponseApiKeyDtoArray_(
@@ -82,7 +76,7 @@ def mock_index_api_key():
 @pytest.fixture
 def mock_delete_api_key():
     with mock.patch.object(
-        ctl.sdk.ApiKeysApi, "delete_api_key", autospec=True
+        ctl.sdk.APIKeysApi, "delete_api_key", autospec=True
     ) as the_mock:
         yield the_mock
 
@@ -90,7 +84,7 @@ def mock_delete_api_key():
 @pytest.fixture
 def mock_create_api_key():
     with mock.patch.object(
-        ctl.sdk.ApiKeysApi,
+        ctl.sdk.APIKeysApi,
         "create_api_key",
         autospec=True,
         return_value=ctl.sdk.models.ApiResponseApiKeyObject_(
