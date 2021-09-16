@@ -269,6 +269,13 @@ def get_endpoints(name, id, tag, skip, take, show_services, online, offline, jso
 @apis.command()
 @click.argument("endpoint")
 @click.option(
+    "--name",
+    "-n",
+    is_flag=True,
+    default=False,
+    help="Use endpoint name instead of id.",
+)
+@click.option(
     "--json",
     "-j",
     is_flag=True,
@@ -353,6 +360,7 @@ def configure_endpoints(
     clear_tags,
     disable_all_services,
     enable_all_services,
+    name,
     take,
     skip,
     json,
@@ -373,8 +381,9 @@ def configure_endpoints(
 
     The same applies to services.
     """
+    filter_str = f"name:{endpoint}" if name else f"ids[]:{endpoint}"
     agents = sdk.utils.WithPagination(sdk.AgentsApi(api).platform_agent_index)(
-        filter=f"id|name:'{endpoint}'",
+        filter=filter_str,
         _preload_content=False,
     )["data"]
 
