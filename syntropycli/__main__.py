@@ -127,7 +127,7 @@ def delete_api_key(name, id, yes, api):
         for key in keys:
             if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
                 continue
-            api.delete_api_key(key.api_key_id)
+            api.delete_api_key(int(key.api_key_id))
             click.secho(
                 f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",
                 fg="green",
@@ -373,7 +373,7 @@ def configure_endpoints(
 
     The same applies to services.
     """
-    agents = sdk.AgentsApi(api).platform_agent_index(
+    agents = sdk.utils.WithPagination(sdk.AgentsApi(api).platform_agent_index)(
         filter=f"id|name:'{endpoint}'",
         _preload_content=False,
     )["data"]
@@ -426,8 +426,8 @@ def configure_endpoints(
         service_api = sdk.ServicesApi(api)
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
-        agents_services_all = BatchedRequestQuery(
-            service_api.platform_agent_service_index,
+        agents_services_all = sdk.utils.BatchedRequestQuery(
+            sdk.utils.WithPagination(service_api.platform_agent_service_index),
             max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids, _preload_content=False)["data"]
         agents_services = defaultdict(list)

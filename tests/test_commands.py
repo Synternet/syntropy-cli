@@ -141,7 +141,9 @@ def test_get_endpoints__with_services(runner, print_table_mock, login_mock):
             print_table_mock.assert_called_once()
 
 
-def test_configure_endpoints__none(runner, print_table_mock, login_mock):
+def test_configure_endpoints__none(
+    runner, print_table_mock, login_mock, with_pagination
+):
     with mock.patch.object(
         ctl.sdk.AgentsApi,
         "platform_agent_index",
@@ -160,7 +162,8 @@ def test_configure_endpoints__none(runner, print_table_mock, login_mock):
             autospec=True,
             return_value={"data": []},
         ) as services_mock:
-            runner.invoke(ctl.configure_endpoints, "an-endpoint")
+            run = runner.invoke(ctl.configure_endpoints, "an-endpoint")
+            print(run, run.output)
             assert index_mock.call_count == 2
             assert services_mock.call_count == 0
             print_table_mock.assert_called_once()
@@ -181,7 +184,7 @@ def test_configure_endpoints__none(runner, print_table_mock, login_mock):
     ],
 )
 def test_configure_endpoints__tags_providers(
-    runner, print_table_mock, args, patch_args, login_mock
+    runner, print_table_mock, args, patch_args, login_mock, with_pagination
 ):
     with mock.patch.object(
         ctl.sdk.AgentsApi,
@@ -258,7 +261,7 @@ def test_configure_endpoints__tags_providers(
     ],
 )
 def test_configure_endpoints_services(
-    runner, print_table_mock, args, patch_args, login_mock
+    runner, print_table_mock, args, patch_args, login_mock, with_pagination
 ):
     with mock.patch.object(
         ctl.sdk.AgentsApi,

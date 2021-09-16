@@ -82,6 +82,17 @@ def mock_delete_api_key():
 
 
 @pytest.fixture
+def with_pagination():
+    with mock.patch.object(
+        ctl.sdk.utils,
+        "WithPagination",
+        autospec=True,
+        side_effect=lambda x: x,
+    ) as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
 def mock_create_api_key():
     with mock.patch.object(
         ctl.sdk.APIKeysApi,
