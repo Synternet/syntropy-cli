@@ -436,7 +436,7 @@ def configure_endpoints(
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
         agents_services_all = sdk.utils.BatchedRequestQuery(
-            sdk.utils.WithPagination(service_api.platform_agent_service_index),
+            sdk.ServicesApi(api).platform_agent_service_index,
             max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids, _preload_content=False)["data"]
         agents_services = defaultdict(list)
