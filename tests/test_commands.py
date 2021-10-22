@@ -141,7 +141,7 @@ def test_get_endpoints__with_services(runner, print_table_mock, login_mock):
             print_table_mock.assert_called_once()
 
 
-def test_configure_endpoints__none(
+def test_configure_endpoints__fail_not_number(
     runner, print_table_mock, login_mock, with_pagination
 ):
     with mock.patch.object(
@@ -163,6 +163,34 @@ def test_configure_endpoints__none(
             return_value={"data": []},
         ) as services_mock:
             run = runner.invoke(ctl.configure_endpoints, "an-endpoint")
+            assert "Please use -n flag for endpoint names instead of IDs." in run.output
+            assert index_mock.call_count == 0
+            assert services_mock.call_count == 0
+            assert print_table_mock.call_count == 0
+
+
+def test_configure_endpoints__none(
+    runner, print_table_mock, login_mock, with_pagination
+):
+    with mock.patch.object(
+        ctl.sdk.AgentsApi,
+        "platform_agent_index",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "agent_id": 123,
+                }
+            ]
+        },
+    ) as index_mock:
+        with mock.patch.object(
+            ctl.sdk.ServicesApi,
+            "platform_agent_service_index",
+            autospec=True,
+            return_value={"data": []},
+        ) as services_mock:
+            run = runner.invoke(ctl.configure_endpoints, "321")
             print(run, run.output)
             assert index_mock.call_count == 2
             assert services_mock.call_count == 0
@@ -172,13 +200,13 @@ def test_configure_endpoints__none(
 @pytest.mark.parametrize(
     "args, patch_args",
     [
-        [["an-endpoint", "--add-tag", "abcd"], {"agent_tags": ["abcd"]}],
+        [["123", "--add-tag", "abcd"], {"agent_tags": ["abcd"]}],
         [
-            ["an-endpoint", "--set-provider", "another"],
+            ["an-endpoint", "--name", "--set-provider", "another"],
             {"agent_provider_name": "another"},
         ],
         [
-            ["an-endpoint", "--add-tag", "abcd", "--set-provider", "another"],
+            ["an-endpoint", "-n", "--add-tag", "abcd", "--set-provider", "another"],
             {"agent_tags": ["abcd"], "agent_provider_name": "another"},
         ],
     ],
@@ -242,20 +270,23 @@ def test_configure_endpoints__tags_providers(
     "args, patch_args",
     [
         [
-            ["an-endpoint", "--set-service", "abc"],
+            ["an-endpoint", "--name", "--set-service", "abc"],
             [{"id": 1, "isEnabled": True}, {"id": 2, "isEnabled": False}],
         ],
         [
-            ["an-endpoint", "--enable-service", "abc"],
+            ["an-endpoint", "-n", "--enable-service", "abc"],
             [{"id": 1, "isEnabled": True}],
         ],
         [
-            ["an-endpoint", "--disable-service", "def"],
+            ["an-endpoint", "-n", "--disable-service", "def"],
             [{"id": 2, "isEnabled": False}],
         ],
-        [["an-endpoint", "--enable-all-services"], [{"id": 1, "isEnabled": True}]],
         [
-            ["an-endpoint", "--disable-all-services"],
+            ["an-endpoint", "-n", "--enable-all-services"],
+            [{"id": 1, "isEnabled": True}],
+        ],
+        [
+            ["an-endpoint", "-n", "--disable-all-services"],
             [{"id": 2, "isEnabled": False}],
         ],
     ],

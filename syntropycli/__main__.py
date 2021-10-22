@@ -381,6 +381,17 @@ def configure_endpoints(
 
     The same applies to services.
     """
+    if not name:
+        try:
+            endpoint = int(endpoint)
+        except ValueError:
+            click.secho(
+                "Please use -n flag for endpoint names instead of IDs.",
+                err=True,
+                fg="red",
+            )
+            raise SystemExit(1)
+
     filter_str = f"name:{endpoint}" if name else f"ids[]:{endpoint}"
     agents = sdk.utils.WithPagination(sdk.AgentsApi(api).platform_agent_index)(
         filter=filter_str,
