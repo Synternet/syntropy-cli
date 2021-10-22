@@ -366,12 +366,12 @@ def configure_endpoints(
     json,
 ):
     """Configures an endpoint with provided provider, tags. Also, allows to enable/disable services.
-    Endpoint can be an ID or a name. Multiple endpoints can be configured if names match partially with the provided name.
+    Endpoint can be an ID or a name (use -n option). Multiple endpoints can be configured if names match partially with the provided name.
 
     It is possible to supply multiple --set-tag, --add-tag and --remove-tag options. The sequence of operations is set, add and then remove.
     So if you run this:
 
-        syntropyctl endpoint-name --set-tag tag1 --set-tag tag2 --add-tag tag3 --add-tag4 --remove-tag tag1
+        syntropyctl configure-endpoints --set-tag tag1 --set-tag tag2 --add-tag tag3 --add-tag tag4 --remove-tag tag1 -n <endpoint-name>
 
     \b
     then syntropyctl will:
@@ -436,7 +436,7 @@ def configure_endpoints(
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
         agents_services_all = sdk.utils.BatchedRequestQuery(
-            sdk.utils.WithPagination(service_api.platform_agent_service_index),
+            sdk.ServicesApi(api).platform_agent_service_index,
             max_query_size=MAX_QUERY_FIELD_SIZE,
         )(ids, _preload_content=False)["data"]
         agents_services = defaultdict(list)
