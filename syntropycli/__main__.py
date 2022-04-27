@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 import click
 import syntropy_sdk as sdk
+from syntropy_sdk import models
 
 from syntropycli.decorators import *
 from syntropycli.utils import *
@@ -28,7 +29,7 @@ def apis():
 def get_providers(skip, take, json, api):
     """Retrieve a list of endpoint providers."""
     api = sdk.AgentsApi(api)
-    providers = WithPagination(api.platform_agent_provider_index)(
+    providers = WithPagination(api.v1_network_agents_providers_get)(
         skip=skip, take=take, _preload_content=False
     )["data"]
     fields = [
@@ -57,8 +58,8 @@ def get_api_keys(skip, take, json, api):
     By default this command will retrieve up to 128 API keys. You can use --take parameter to get more keys.
     """
 
-    api = sdk.APIKeysApi(api)
-    keys = WithPagination(api.get_api_key)(
+    api = sdk.AuthApi(api)
+    keys = WithPagination(api.v1_network_auth_api_keys_get)(
         skip=skip, take=take, _preload_content=False
     )["data"]
 
@@ -76,23 +77,25 @@ def get_api_keys(skip, take, json, api):
 
 @apis.command()
 @click.argument("name")
+@click.argument("description")
 @click.argument(
     "expires",
     type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
 )
 @syntropy_api
-def create_api_key(name, expires, api):
+def create_api_key(name, description, expires, api):
     """Create a API key for endpoint agent.
 
     NOTE: Be sure to remember the API key as it will be only available as a result of this command.
     """
-    body = {
-        "api_key_name": name,
-        "api_key_valid_until": expires,
-    }
-    api = sdk.APIKeysApi(api)
-    result = api.create_api_key(body=body)
+    body = models.V1NetworkAuthApiKeysCreateRequest(
+        api_key_name=name,
+        api_key_valid_until=expires,
+        api_key_description=description,
+    )
+    api = sdk.AuthApi(api)
+    result = api.v1_network_auth_api_keys_create(body=body)
     click.echo(result.data.api_key_secret)
 
 
@@ -120,56 +123,65 @@ def delete_api_key(name, id, yes, api):
         click.secho("Either API key name or id must be specified.", err=True, fg="red")
         raise SystemExit(1)
 
-    api = sdk.APIKeysApi(api)
+    api = sdk.AuthApi(api)
 
     if id is None:
-        keys = api.get_api_key(filter=f"api_key_name:'{name}'").data
+        keys = WithPagination(api.v1_network_auth_api_keys_get)(_preload_content=False)[
+            "data"
+        ]
         for key in keys:
-            if not yes and not confirm_deletion(key.api_key_name, key.api_key_id):
+            if key["api_key_name"] != name:
                 continue
-            api.delete_api_key(int(key.api_key_id))
+            if not yes and not confirm_deletion(key["api_key_name"], key["api_key_id"]):
+                continue
+            api.v1_network_auth_api_keys_delete(int(key["api_key_id"]))
             click.secho(
-                f"Deleted API key: {key.api_key_name} (id={key.api_key_id}).",
+                f"Deleted API key: {key['api_key_name']} (id={key['api_key_id']}).",
                 fg="green",
             )
     else:
-        api.delete_api_key(id)
+        api.v1_network_auth_api_keys_delete(id)
         click.secho(f"Deleted API key: id={id}.", fg="green")
 
 
 def _get_endpoints(
     name, id, tag, skip, take, show_services, online, offline, json, api
 ):
-    filters = []
-    if name:
-        filters.append(f"id|name:'{name}'")
-    elif id:
-        filters.append(f"ids[]:{id}")
-    if tag:
-        filters.append(f"tags_names[]:{tag}")
-    agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
-        filter=",".join(filters) if filters else None,
-        skip=skip,
-        take=take,
-        _preload_content=False,
-    )["data"]
+    if not name and not id and not tag and not online and not offline:
+        agents = WithPagination(sdk.AgentsApi(api).v1_network_agents_get)(
+            skip=skip,
+            take=take,
+            _preload_content=False,
+        )["data"]
+    else:
+        filters = models.V1AgentFilter()
+        if name:
+            filters.agent_name = name
+        elif id:
+            filters.agent_id = [id]
+        if tag:
+            filters.agent_tag_name = [tag]
 
-    if online or offline:
-        filtered_agents = []
-        is_online = online and not offline
-        while agents and len(filtered_agents) < take:
-            filtered_agents += [
-                agent for agent in agents if agent["agent_is_online"] == is_online
+        if online:
+            filters.agent_status = [models.AgentFilterAgentStatus.CONNECTED]
+        elif offline:
+            filters.agent_status = [
+                models.AgentFilterAgentStatus.DISCONNECTED,
+                models.AgentFilterAgentStatus.CONNECTED_WITH_ERRORS,
             ]
-            if len(filtered_agents) < take:
-                skip += take
-                agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
-                    filter=",".join(filters) if filters else None,
+
+        agents = (
+            sdk.AgentsApi(api)
+            .v1_network_agents_search(
+                models.V1NetworkAgentsSearchRequest(
+                    filter=filters,
                     skip=skip,
                     take=take,
-                    _preload_content=False,
-                )["data"]
-        agents = filtered_agents
+                ),
+                # _preload_content=False,
+            )
+            .to_dict()["data"]
+        )
 
     fields = [
         ("Agent ID", "agent_id"),
@@ -187,10 +199,10 @@ def _get_endpoints(
 
     if show_services:
         ids = [agent["agent_id"] for agent in agents]
-        agents_services = BatchedRequestQuery(
-            sdk.ServicesApi(api).platform_agent_service_index,
+        agents_services = BatchedRequestFilter(
+            sdk.AgentsApi(api).v1_network_agents_services_get,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids, _preload_content=False)["data"]
+        )(filter=ids, _preload_content=False)["data"]
         agent_services = defaultdict(list)
         for agent in agents_services:
             agent_services[agent["agent_id"]].append(agent)
@@ -381,11 +393,18 @@ def configure_endpoints(
 
     The same applies to services.
     """
-    filter_str = f"name:{endpoint}" if name else f"ids[]:{endpoint}"
-    agents = sdk.utils.WithPagination(sdk.AgentsApi(api).platform_agent_index)(
-        filter=filter_str,
-        _preload_content=False,
-    )["data"]
+    body = models.V1NetworkAgentsSearchRequest(
+        filter=models.V1AgentFilter(agent_name=endpoint)
+        if name
+        else models.V1AgentFilter(agent_id=endpoint)
+    )
+    agents = (
+        sdk.AgentsApi(api)
+        .v1_network_agents_search(
+            body,
+        )
+        .to_dict()["data"]
+    )
 
     if not agents:
         click.secho("Could not find any endpoints.", err=True, fg="red")
@@ -396,13 +415,15 @@ def configure_endpoints(
     if set_provider or set_tag or add_tag or remove_tag or clear_tags:
         agents_tags = {
             agent["agent_id"]: [
-                tag["agent_tag_name"] for tag in agent.get("agent_tags", [])
+                tag["agent_tag_mame"] for tag in agent.get("agent_tags", []) if tag
             ]
             for agent in agents
             if "agent_tags" in agent
         }
         for agent in agents:
-            original_tags = agents_tags.get(agent["agent_id"], [])
+            original_tags = [
+                tag["agent_tag_name"] for tag in agents_tags.get(agent["agent_id"], [])
+            ]
             tags = update_list(original_tags, set_tag, add_tag, remove_tag, clear_tags)
             payload = {}
             current_provider = (
@@ -417,7 +438,7 @@ def configure_endpoints(
             ) != set(tags):
                 payload["agent_tags"] = tags
             if payload:
-                sdk.AgentsApi(api).platform_agent_update(payload, agent["agent_id"])
+                sdk.AgentsApi(api).v1_network_agents_update(payload, agent["agent_id"])
                 click.secho("Tags and provider configured.", fg="green")
             else:
                 click.secho(
@@ -432,13 +453,13 @@ def configure_endpoints(
         or enable_all_services
         or disable_all_services
     ):
-        service_api = sdk.ServicesApi(api)
         show_services = True
         ids = [agent["agent_id"] for agent in agents]
-        agents_services_all = sdk.utils.BatchedRequestQuery(
-            sdk.ServicesApi(api).platform_agent_service_index,
+        agents_services_all = sdk.utils.BatchedRequestFilter(
+            sdk.AgentsApi(api).v1_network_agents_services_get,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids, _preload_content=False)["data"]
+        )(filter=ids, _preload_content=False)["data"]
+
         agents_services = defaultdict(list)
         for agent in agents_services_all:
             agents_services[agent["agent_id"]].append(agent)
@@ -490,14 +511,20 @@ def configure_endpoints(
             ]
             if subnets:
                 payload = {"subnetsToUpdate": subnets}
-                service_api.platform_agent_service_subnet_update(payload)
+                sdk.AgentsApi(api).v1_network_agents_services_update(payload)
                 click.secho("Service subnets updated.", fg="green")
             else:
                 click.secho("Nothing to do for service configuration.", fg="yellow")
 
+    name_param, id_param = None, None
+    if name:
+        name_param = endpoint
+    else:
+        id_param = endpoint
+
     _get_endpoints(
-        endpoint,
-        None,
+        name_param,
+        id_param,
         None,
         skip,
         take,
@@ -541,22 +568,39 @@ def get_connections(id, name, skip, take, show_services, json, api):
 
     By default this command will retrieve up to 42 connections. You can use --take parameter to get more connections.
     """
-    filters = []
+    if name or id:
+        if name:
+            agents = (
+                sdk.AgentsApi(api)
+                .v1_network_agents_search(
+                    models.V1NetworkAgentsSearchRequest(
+                        filter=models.V1AgentFilter(agent_name=name)
+                    ),
+                )
+                .to_dict()["data"]
+            )
+            id = [agent["agent_id"] for agent in agents]
+        else:
+            id = [int(id)]
 
-    if name:
-        filters.append(f"id|name:{name}")
-    if id:
-        filters.append(f"agent_ids[]:{id}")
-    connections = WithPagination(
-        sdk.ConnectionsApi(api).platform_connection_groups_index
-    )(
-        filter=",".join(filters) if filters else None,
-        skip=skip,
-        take=take,
-        _preload_content=False,
-    )[
-        "data"
-    ]
+        filters = models.V1ConnectionFilter(agent_id=id)
+
+        connections = (
+            sdk.ConnectionsApi(api)
+            .v1_network_connections_search(
+                body=models.V1NetworkConnectionsSearchRequest(
+                    filter=filters,
+                    skip=skip,
+                    take=take,
+                ),
+            )
+            .to_dict()["data"]
+        )
+    else:
+        connections = WithPagination(
+            sdk.ConnectionsApi(api).v1_network_connections_get
+        )(skip=skip, take=take, _preload_content=False,)["data"]
+
     fields = [
         ("ID", "agent_connection_group_id"),
         ("Endpoint 1", ("agent_1", "agent_name")),
@@ -573,10 +617,10 @@ def get_connections(id, name, skip, take, show_services, json, api):
 
     if show_services:
         ids = [connection["agent_connection_group_id"] for connection in connections]
-        connections_services = BatchedRequestQuery(
-            sdk.ServicesApi(api).platform_connection_service_show,
+        connections_services = BatchedRequestFilter(
+            sdk.ConnectionsApi(api).v1_network_connections_services_get,
             max_query_size=MAX_QUERY_FIELD_SIZE,
-        )(ids, _preload_content=False)["data"]
+        )(filter=ids, _preload_content=False)["data"]
         connection_services = {
             connection["agent_connection_group_id"]: connection
             for connection in connections_services
@@ -637,7 +681,7 @@ def create_connections(agents, use_names, json, api):
     """
 
     if use_names:
-        all_agents = WithPagination(sdk.AgentsApi(api).platform_agent_index)(
+        all_agents = WithPagination(sdk.AgentsApi(api).v1_network_agents_get)(
             _preload_content=False
         )["data"]
         agents = find_by_name(all_agents, agents, "agent")
@@ -655,10 +699,18 @@ def create_connections(agents, use_names, json, api):
         raise SystemExit(1)
     agents = list(zip(agents[:-1:2], agents[1::2]))
 
-    body = {
-        "agent_ids": [{"agent_1_id": a, "agent_2_id": b} for a, b in agents],
-    }
-    result = sdk.ConnectionsApi(api).platform_connection_create_p2p(body=body)
+    body = models.V1NetworkConnectionsCreateP2PRequest(
+        agent_pairs=[
+            models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                agent_1_id=a,
+                agent_2_id=b,
+            )
+            for a, b in agents
+        ],
+    )
+    result = sdk.ConnectionsApi(api).v1_network_connections_create_p2_p(
+        body=body, _preload_content=False
+    )
 
     if result and "errors" in result:
         for error in result["errors"]:
@@ -666,17 +718,12 @@ def create_connections(agents, use_names, json, api):
 
 
 @apis.command()
-@click.argument("endpoint-1", type=int)
-@click.argument("endpoint-2", type=int)
+@click.argument("ids", type=int, nargs=-1)
 @syntropy_api
-def delete_connection(endpoint_1, endpoint_2, api):
-    """Delete a connection."""
-    sdk.ConnectionsApi(api).platform_connections_destroy_deprecated(
-        {
-            "agent_1_id": endpoint_1,
-            "agent_2_id": endpoint_2,
-        }
-    )
+def delete_connection(ids, api):
+    """Delete connections using their ID."""
+    for id in ids:
+        sdk.ConnectionsApi(api).v1_network_connections_delete(id)
 
 
 def main():

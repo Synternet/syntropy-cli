@@ -4,11 +4,11 @@
 #
 #    pip-compile requirements.in
 #
-certifi==2021.5.30
+certifi==2021.10.8
     # via syntropy-sdk
-click==8.0.1
+click==8.1.2
     # via -r requirements.in
-prettytable==2.2.0
+prettytable==3.2.0
     # via -r requirements.in
 python-dateutil==2.8.2
     # via syntropy-sdk
@@ -16,9 +16,9 @@ six==1.16.0
     # via
     #   python-dateutil
     #   syntropy-sdk
-syntropy-sdk==0.3.0
+syntropy-sdk==0.4.0
     # via -r requirements.in
-urllib3==1.26.6
+urllib3==1.26.9
     # via syntropy-sdk
 wcwidth==0.2.5
     # via prettytable

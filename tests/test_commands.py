@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 import syntropy_sdk as sdk
 from click.testing import CliRunner
+from syntropy_sdk import models
 from syntropy_sdk.rest import ApiException
 
 from syntropycli import __main__ as ctl
@@ -25,35 +26,35 @@ def confirm_deletion():
 def test_get_providers(runner, print_table_mock, login_mock):
     with mock.patch.object(
         sdk.AgentsApi,
-        "platform_agent_provider_index",
+        "v1_network_agents_providers_get",
         autospec=True,
-        return_value={
-            "data": [
-                {
-                    "agent_provider_id": 1,
-                    "agent_provider_name": "AWS",
-                    "agent_provider_tunnels_required": True,
-                    "agent_provider_created_at": "2019-12-12T15:51:06.905",
-                    "agent_provider_updated_at": "2019-12-12T15:51:06.905",
-                },
-                {
-                    "agent_provider_id": 2,
-                    "agent_provider_name": "IBM",
-                    "agent_provider_tunnels_required": True,
-                    "agent_provider_created_at": "2020-01-22T15:50:55.325",
-                    "agent_provider_updated_at": "2020-01-22T15:50:55.325",
-                },
-                {
-                    "agent_provider_id": 3,
-                    "agent_provider_name": "Unknown",
-                    "agent_provider_tunnels_required": True,
-                    "agent_provider_created_at": "2020-09-21T07:48:50.111",
-                    "agent_provider_updated_at": "2020-09-21T07:48:50.111",
-                },
+        return_value=models.V1NetworkAgentsProvidersGetResponse(
+            [
+                models.AgentProvider(
+                    **{
+                        "agent_provider_id": 1,
+                        "agent_provider_name": "AWS",
+                        "agent_provider_icon_url": "url 1",
+                    }
+                ),
+                models.AgentProvider(
+                    **{
+                        "agent_provider_id": 2,
+                        "agent_provider_name": "IBM",
+                        "agent_provider_icon_url": "url 2",
+                    }
+                ),
+                models.AgentProvider(
+                    **{
+                        "agent_provider_id": 3,
+                        "agent_provider_name": "Unknown",
+                        "agent_provider_icon_url": "url 3",
+                    }
+                ),
             ],
-        },
+        ),
     ) as index_mock:
-        run = runner.invoke(ctl.get_providers)
+        runner.invoke(ctl.get_providers)
         index_mock.assert_called_once()
         print_table_mock.assert_called_once()
 
@@ -65,13 +66,14 @@ def test_get_api_keys(runner, print_table_mock, mock_index_api_key, login_mock):
 
 
 def test_create_api_key(runner, mock_create_api_key, login_mock):
-    runner.invoke(ctl.create_api_key, ["name", "2021-10-11 20:20:21"])
+    runner.invoke(ctl.create_api_key, ["name", "a description", "2021-10-11 20:20:21"])
     mock_create_api_key.assert_called_once_with(
         mock.ANY,
-        body={
-            "api_key_name": "name",
-            "api_key_valid_until": datetime.datetime(2021, 10, 11, 20, 20, 21),
-        },
+        body=models.V1NetworkAuthApiKeysCreateRequest(
+            api_key_name="name",
+            api_key_valid_until=datetime.datetime(2021, 10, 11, 20, 20, 21),
+            api_key_description="a description",
+        ),
     )
 
 
@@ -84,9 +86,9 @@ def test_delete_api_key__by_name(
     runner, confirm_deletion, mock_delete_api_key, mock_index_api_key, login_mock
 ):
     runner.invoke(ctl.delete_api_key, ["--name", "test"])
-    mock_delete_api_key.assert_called_once_with(mock.ANY, 321)
     mock_index_api_key.assert_called_once()
-    assert confirm_deletion.call_count == 2
+    assert mock_delete_api_key.call_count == 0
+    assert confirm_deletion.call_count == 1
 
 
 def test_delete_api_key__by_name_force(
@@ -94,79 +96,77 @@ def test_delete_api_key__by_name_force(
 ):
     runner.invoke(ctl.delete_api_key, ["--name", "test", "--yes"])
     assert mock_delete_api_key.call_args_list == [
-        mock.call(mock.ANY, 123),
         mock.call(mock.ANY, 321),
     ]
     mock_index_api_key.assert_called_once()
     assert confirm_deletion.call_count == 0
 
 
-def test_get_endpoints(runner, print_table_mock, login_mock):
-    with mock.patch.object(
-        ctl.sdk.AgentsApi,
-        "platform_agent_index",
-        autospec=True,
-        return_value={"data": []},
-    ) as index_mock:
-        runner.invoke(ctl.get_endpoints)
-        index_mock.assert_called_once()
-        print_table_mock.assert_called_once()
+def test_get_endpoints__empty(
+    runner,
+    print_table_mock,
+    login_mock,
+    mock_agents_search_empty,
+    mock_agents_get_empty,
+):
+    runner.invoke(ctl.get_endpoints)
+    mock_agents_get_empty.assert_called_once()
+    assert mock_agents_search_empty.call_count == 0
+    print_table_mock.assert_called_once()
 
 
-def test_get_endpoints__with_services(runner, print_table_mock, login_mock):
-    with mock.patch.object(
-        ctl.sdk.AgentsApi,
-        "platform_agent_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "agent_id": 123,
-                }
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.ServicesApi,
-            "platform_agent_service_index",
-            autospec=True,
-            return_value={"data": []},
-        ) as services_mock:
-            output = runner.invoke(ctl.get_endpoints, "--show-services")
-            print(output.output)
-            index_mock.assert_called_once()
-            services_mock.assert_called_once_with(
-                mock.ANY, [123], _preload_content=False
-            )
-            print_table_mock.assert_called_once()
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--name", "a name"],
+        ["--id", "123"],
+        ["--tag", "tag"],
+    ],
+)
+def test_get_endpoints__filters_empty(
+    runner,
+    print_table_mock,
+    login_mock,
+    mock_agents_search_empty,
+    mock_agents_get_empty,
+    args,
+):
+    runner.invoke(ctl.get_endpoints, args)
+    mock_agents_search_empty.assert_called_once()
+    assert mock_agents_get_empty.call_count == 0
+    print_table_mock.assert_called_once()
+
+
+def test_get_endpoints__with_services(
+    runner,
+    print_table_mock,
+    login_mock,
+    mock_agents_get_single,
+    mock_agents_services_get_empty,
+):
+    runner.invoke(ctl.get_endpoints, "--show-services")
+    mock_agents_get_single.assert_called_once()
+    mock_agents_services_get_empty.assert_called_once_with(
+        mock.ANY, filter="123", _preload_content=False
+    )
+    print_table_mock.assert_called_once()
 
 
 def test_configure_endpoints__none(
-    runner, print_table_mock, login_mock, with_pagination
+    runner,
+    print_table_mock,
+    login_mock,
+    with_pagination,
+    mock_agents_get_single,
+    mock_agents_search_empty,
+    mock_agents_services_get_empty,
 ):
-    with mock.patch.object(
-        ctl.sdk.AgentsApi,
-        "platform_agent_index",
-        autospec=True,
-        return_value={
-            "data": [
-                {
-                    "agent_id": 123,
-                }
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.ServicesApi,
-            "platform_agent_service_index",
-            autospec=True,
-            return_value={"data": []},
-        ) as services_mock:
-            run = runner.invoke(ctl.configure_endpoints, "an-endpoint")
-            print(run, run.output)
-            assert index_mock.call_count == 2
-            assert services_mock.call_count == 0
-            print_table_mock.assert_called_once()
+    run = runner.invoke(ctl.configure_endpoints, "an-endpoint")
+    print(run, run.output)
+    assert mock_agents_search_empty.call_count == 1
+    assert mock_agents_get_single.call_count == 0
+    assert mock_agents_services_get_empty.call_count == 0
+    assert print_table_mock.call_count == 0
 
 
 @pytest.mark.parametrize(
@@ -184,58 +184,29 @@ def test_configure_endpoints__none(
     ],
 )
 def test_configure_endpoints__tags_providers(
-    runner, print_table_mock, args, patch_args, login_mock, with_pagination
+    runner,
+    print_table_mock,
+    args,
+    patch_args,
+    login_mock,
+    with_pagination,
+    mock_agents_search_single,
+    mock_agents_get_single,
+    mock_agents_services_get_empty,
 ):
     with mock.patch.object(
         ctl.sdk.AgentsApi,
-        "platform_agent_index",
+        "v1_network_agents_update",
         autospec=True,
-        return_value={
-            "data": [
-                {
-                    "agent_id": 123,
-                    "agent_provider": {"agent_provider_name": "provider"},
-                },
-                {
-                    "agent_id": 234,
-                    "agent_provider": None,
-                },
-                {
-                    "agent_id": 345,
-                },
-                {
-                    "agent_id": 456,
-                    "agent_provider": {},
-                },
-                {
-                    "agent_id": 567,
-                    "agent_provider": {"agent_provider_name": None},
-                },
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.ServicesApi,
-            "platform_agent_service_index",
-            autospec=True,
-            return_value={"data": []},
-        ) as services_mock:
-            with mock.patch.object(
-                ctl.sdk.AgentsApi,
-                "platform_agent_update",
-                autospec=True,
-            ) as patch_mock:
-                runner.invoke(ctl.configure_endpoints, args)
-                assert index_mock.call_count == 2
-                assert patch_mock.call_args_list == [
-                    mock.call(mock.ANY, patch_args, 123),
-                    mock.call(mock.ANY, patch_args, 234),
-                    mock.call(mock.ANY, patch_args, 345),
-                    mock.call(mock.ANY, patch_args, 456),
-                    mock.call(mock.ANY, patch_args, 567),
-                ]
-                assert services_mock.call_count == 0
-                print_table_mock.assert_called_once()
+    ) as patch_mock:
+        runner.invoke(ctl.configure_endpoints, args)
+        assert mock_agents_get_single.call_count == 0
+        assert mock_agents_search_single.call_count == 2
+        assert patch_mock.call_args_list == [
+            mock.call(mock.ANY, patch_args, 123),
+        ]
+        assert mock_agents_services_get_empty.call_count == 0
+        print_table_mock.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -261,73 +232,33 @@ def test_configure_endpoints__tags_providers(
     ],
 )
 def test_configure_endpoints_services(
-    runner, print_table_mock, args, patch_args, login_mock, with_pagination
+    runner,
+    print_table_mock,
+    args,
+    patch_args,
+    login_mock,
+    with_pagination,
+    mock_agents_search_single,
+    mock_agents_services_get,
 ):
     with mock.patch.object(
         ctl.sdk.AgentsApi,
-        "platform_agent_index",
+        "v1_network_agents_services_update",
         autospec=True,
-        return_value={
-            "data": [
-                {
-                    "agent_id": 123,
-                }
-            ]
-        },
-    ) as index_mock:
-        with mock.patch.object(
-            ctl.sdk.ServicesApi,
-            "platform_agent_service_index",
-            autospec=True,
-            return_value={
-                "data": [
-                    {
-                        "agent_id": 123,
-                        "agent_service_name": "abc",
-                        "agent_service_is_active": True,
-                        "agent_service_subnets": [
-                            {
-                                "agent_service_subnet_id": 1,
-                                "agent_service_subnet_is_user_enabled": False,
-                                "agent_service_subnet_is_active": True,
-                            },
-                        ],
-                    },
-                    {
-                        "agent_id": 123,
-                        "agent_service_name": "def",
-                        "agent_service_is_active": True,
-                        "agent_service_subnets": [
-                            {
-                                "agent_service_subnet_id": 2,
-                                "agent_service_subnet_is_user_enabled": True,
-                                "agent_service_subnet_is_active": True,
-                            },
-                        ],
-                    },
-                ]
-            },
-        ) as services_mock:
-            with mock.patch.object(
-                ctl.sdk.ServicesApi,
-                "platform_agent_service_subnet_update",
-                autospec=True,
-            ) as patch_mock:
-                runner.invoke(ctl.configure_endpoints, args)
-                assert index_mock.call_count == 2
-                patch_mock.assert_called_once_with(
-                    mock.ANY, {"subnetsToUpdate": patch_args}
-                )
-                assert services_mock.call_count == 2
-                print_table_mock.assert_called_once()
+    ) as patch_mock:
+        runner.invoke(ctl.configure_endpoints, args)
+        assert mock_agents_search_single.call_count == 2
+        patch_mock.assert_called_once_with(mock.ANY, {"subnetsToUpdate": patch_args})
+        assert mock_agents_services_get.call_count == 2
+        print_table_mock.assert_called_once()
 
 
 def test_get_connections(runner, print_table_mock, login_mock):
     with mock.patch.object(
         ctl.sdk.ConnectionsApi,
-        "platform_connection_groups_index",
+        "v1_network_connections_get",
         autospec=True,
-        return_value={"data": []},
+        return_value=models.V1NetworkConnectionsGetResponse([]),
     ) as index_mock:
         runner.invoke(ctl.get_connections)
         index_mock.assert_called_once()
@@ -337,20 +268,20 @@ def test_get_connections(runner, print_table_mock, login_mock):
 def test_get_connections__with_services(runner, print_table_mock, login_mock):
     with mock.patch.object(
         ctl.sdk.ConnectionsApi,
-        "platform_connection_groups_index",
+        "v1_network_connections_get",
         autospec=True,
         return_value={"data": [{"agent_connection_group_id": 123}]},
     ) as index_mock:
         with mock.patch.object(
-            ctl.sdk.ServicesApi,
-            "platform_connection_service_show",
+            ctl.sdk.ConnectionsApi,
+            "v1_network_connections_services_get",
             autospec=True,
             return_value={"data": [{"agent_connection_group_id": 123}]},
         ) as services_mock:
             res = runner.invoke(ctl.get_connections, "--show-services")
             index_mock.assert_called_once()
             services_mock.assert_called_once_with(
-                mock.ANY, [123], _preload_content=False
+                mock.ANY, filter="123", _preload_content=False
             )
             print_table_mock.assert_called_once()
 
@@ -358,38 +289,52 @@ def test_get_connections__with_services(runner, print_table_mock, login_mock):
 def test_create_connections__p2p(runner, login_mock):
     with mock.patch.object(
         ctl.sdk.ConnectionsApi,
-        "platform_connection_create_p2p",
+        "v1_network_connections_create_p2_p",
         autospec=True,
         return_value={"data": []},
     ) as the_mock:
         runner.invoke(ctl.create_connections, ["1", "2", "3", "4"])
         the_mock.assert_called_once_with(
             mock.ANY,
-            body={
-                "agent_ids": [
-                    {"agent_1_id": 1, "agent_2_id": 2},
-                    {"agent_1_id": 3, "agent_2_id": 4},
+            body=models.V1NetworkConnectionsCreateP2PRequest(
+                agent_pairs=[
+                    models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                        agent_1_id=1,
+                        agent_2_id=2,
+                    ),
+                    models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                        agent_1_id=3,
+                        agent_2_id=4,
+                    ),
                 ],
-            },
+            ),
+            _preload_content=False,
         )
 
 
 def test_create_connections__p2p__fail(runner, login_mock):
     with mock.patch.object(
         ctl.sdk.ConnectionsApi,
-        "platform_connection_create_p2p",
+        "v1_network_connections_create_p2_p",
         autospec=True,
         return_value={"errors": [{"message": "some error"}]},
     ) as the_mock:
         result = runner.invoke(ctl.create_connections, ["1", "2", "3", "4"])
         the_mock.assert_called_once_with(
             mock.ANY,
-            body={
-                "agent_ids": [
-                    {"agent_1_id": 1, "agent_2_id": 2},
-                    {"agent_1_id": 3, "agent_2_id": 4},
+            body=models.V1NetworkConnectionsCreateP2PRequest(
+                agent_pairs=[
+                    models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                        agent_1_id=1,
+                        agent_2_id=2,
+                    ),
+                    models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                        agent_1_id=3,
+                        agent_2_id=4,
+                    ),
                 ],
-            },
+            ),
+            _preload_content=False,
         )
         assert "some error" in result.output
 
@@ -397,7 +342,7 @@ def test_create_connections__p2p__fail(runner, login_mock):
 def test_create_connections__p2p_by_name(runner, login_mock):
     with mock.patch.object(
         ctl.sdk.AgentsApi,
-        "platform_agent_index",
+        "v1_network_agents_get",
         autospec=True,
         return_value={
             "data": [
@@ -408,7 +353,7 @@ def test_create_connections__p2p_by_name(runner, login_mock):
     ) as index_mock:
         with mock.patch.object(
             ctl.sdk.ConnectionsApi,
-            "platform_connection_create_p2p",
+            "v1_network_connections_create_p2_p",
             autospec=True,
             return_value={"data": []},
         ) as the_mock:
@@ -419,17 +364,35 @@ def test_create_connections__p2p_by_name(runner, login_mock):
             index_mock.assert_called_once()
             the_mock.assert_called_once_with(
                 mock.ANY,
-                body={
-                    "agent_ids": [{"agent_1_id": 1, "agent_2_id": 2}],
-                },
+                body=models.V1NetworkConnectionsCreateP2PRequest(
+                    agent_pairs=[
+                        models.V1NetworkConnectionsCreateP2PRequestAgentPairs(
+                            agent_1_id=1,
+                            agent_2_id=2,
+                        ),
+                    ],
+                ),
+                _preload_content=False,
             )
 
 
 def test_delete_connection(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.ConnectionsApi, "platform_connections_destroy_deprecated", autospec=True
+        ctl.sdk.ConnectionsApi, "v1_network_connections_delete", autospec=True
     ) as the_mock:
-        runner.invoke(ctl.delete_connection, ["123", "321"])
+        runner.invoke(ctl.delete_connection, "123")
         the_mock.assert_called_once_with(
-            mock.ANY, {"agent_1_id": 123, "agent_2_id": 321}
+            mock.ANY,
+            123,
         )
+
+
+def test_delete_connection__multiple(runner, login_mock):
+    with mock.patch.object(
+        ctl.sdk.ConnectionsApi, "v1_network_connections_delete", autospec=True
+    ) as the_mock:
+        runner.invoke(ctl.delete_connection, ["123", "345"])
+        assert the_mock.call_args_list == [
+            mock.call(mock.ANY, 123),
+            mock.call(mock.ANY, 345),
+        ]

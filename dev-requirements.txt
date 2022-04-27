@@ -8,37 +8,43 @@ attrs==21.2.0
     # via pytest
 backports.entry-points-selectable==1.1.0
     # via virtualenv
-certifi==2021.5.30
+certifi==2021.10.8
     # via
     #   -r requirements.txt
     #   syntropy-sdk
 cfgv==3.3.1
     # via pre-commit
-click==8.0.1
+click==8.1.2
     # via -r requirements.txt
 coverage==5.5
     # via -r dev-requirements.in
 distlib==0.3.2
     # via virtualenv
-filelock==3.0.12
-    # via virtualenv
-identify==2.2.14
-    # via pre-commit
+filelock==3.4.1
+    # via
+    #   -r dev-requirements.in
+    #   virtualenv
+identify==2.4.4
+    # via
+    #   -r dev-requirements.in
+    #   pre-commit
 iniconfig==1.1.1
     # via pytest
 nodeenv==1.6.0
     # via pre-commit
 packaging==21.0
     # via pytest
-platformdirs==2.3.0
-    # via virtualenv
+platformdirs==2.4.0
+    # via
+    #   -r dev-requirements.in
+    #   virtualenv
 pluggy==1.0.0
     # via
     #   -r dev-requirements.in
     #   pytest
 pre-commit==2.15.0
     # via -r dev-requirements.in
-prettytable==2.2.0
+prettytable==3.2.0
     # via -r requirements.txt
 py==1.10.0
     # via
@@ -62,13 +68,13 @@ six==1.16.0
     #   python-dateutil
     #   syntropy-sdk
     #   virtualenv
-syntropy-sdk==0.3.0
+syntropy-sdk==0.4.0
     # via -r requirements.txt
 toml==0.10.2
     # via
     #   pre-commit
     #   pytest
-urllib3==1.26.6
+urllib3==1.26.9
     # via
     #   -r requirements.txt
     #   syntropy-sdk
