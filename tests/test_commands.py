@@ -161,8 +161,7 @@ def test_configure_endpoints__none(
     mock_agents_search_empty,
     mock_agents_services_get_empty,
 ):
-    run = runner.invoke(ctl.configure_endpoints, "an-endpoint")
-    print(run, run.output)
+    runner.invoke(ctl.configure_endpoints, "an-endpoint")
     assert mock_agents_search_empty.call_count == 1
     assert mock_agents_get_single.call_count == 0
     assert mock_agents_services_get_empty.call_count == 0
@@ -172,13 +171,13 @@ def test_configure_endpoints__none(
 @pytest.mark.parametrize(
     "args, patch_args",
     [
-        [["an-endpoint", "--add-tag", "abcd"], {"agent_tags": ["abcd"]}],
+        [["123", "--add-tag", "abcd"], {"agent_tags": ["abcd"]}],
         [
-            ["an-endpoint", "--set-provider", "another"],
+            ["an-endpoint", "--name", "--set-provider", "another"],
             {"agent_provider_name": "another"},
         ],
         [
-            ["an-endpoint", "--add-tag", "abcd", "--set-provider", "another"],
+            ["an-endpoint", "-n", "--add-tag", "abcd", "--set-provider", "another"],
             {"agent_tags": ["abcd"], "agent_provider_name": "another"},
         ],
     ],
@@ -213,20 +212,23 @@ def test_configure_endpoints__tags_providers(
     "args, patch_args",
     [
         [
-            ["an-endpoint", "--set-service", "abc"],
+            ["an-endpoint", "--name", "--set-service", "abc"],
             [{"id": 1, "isEnabled": True}, {"id": 2, "isEnabled": False}],
         ],
         [
-            ["an-endpoint", "--enable-service", "abc"],
+            ["an-endpoint", "-n", "--enable-service", "abc"],
             [{"id": 1, "isEnabled": True}],
         ],
         [
-            ["an-endpoint", "--disable-service", "def"],
+            ["an-endpoint", "-n", "--disable-service", "def"],
             [{"id": 2, "isEnabled": False}],
         ],
-        [["an-endpoint", "--enable-all-services"], [{"id": 1, "isEnabled": True}]],
         [
-            ["an-endpoint", "--disable-all-services"],
+            ["an-endpoint", "-n", "--enable-all-services"],
+            [{"id": 1, "isEnabled": True}],
+        ],
+        [
+            ["an-endpoint", "-n", "--disable-all-services"],
             [{"id": 2, "isEnabled": False}],
         ],
     ],
