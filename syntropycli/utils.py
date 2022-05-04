@@ -50,7 +50,7 @@ def print_table(items, fields, to_json=False):
             table.add_row([get_field(item, field[1:]) for field in fields])
         click.echo(str(table))
     else:
-        click.echo(json.dumps(items, indent=4))
+        click.echo(json.dumps(items, indent=4, default=str))
 
 
 def find_by_name(items, name, field):
