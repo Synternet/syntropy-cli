@@ -48,7 +48,7 @@ def test_print_table__json():
         "syntropycli.utils.json.dumps", return_value=table_mock
     ) as the_mock:
         utils.print_table(items, fields, to_json=True)
-        the_mock.assert_called_once_with(items, indent=4)
+        the_mock.assert_called_once_with(items, indent=4, default=str)
 
 
 def test_find_by_name():
