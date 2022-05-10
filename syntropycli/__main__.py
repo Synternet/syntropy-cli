@@ -415,15 +415,13 @@ def configure_endpoints(
     if set_provider or set_tag or add_tag or remove_tag or clear_tags:
         agents_tags = {
             agent["agent_id"]: [
-                tag["agent_tag_mame"] for tag in agent.get("agent_tags", []) if tag
+                tag["agent_tag_name"] for tag in agent.get("agent_tags", []) if tag
             ]
             for agent in agents
             if "agent_tags" in agent
         }
         for agent in agents:
-            original_tags = [
-                tag["agent_tag_name"] for tag in agents_tags.get(agent["agent_id"], [])
-            ]
+            original_tags = agents_tags.get(agent["agent_id"], [])
             tags = update_list(original_tags, set_tag, add_tag, remove_tag, clear_tags)
             payload = {}
             current_provider = (
@@ -500,17 +498,19 @@ def configure_endpoints(
                     fg="yellow",
                 )
             subnets = [
-                {
-                    "id": subnet["agent_service_subnet_id"],
-                    "isEnabled": name in enabled_services,
-                }
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    is_enabled=name in enabled_services,
+                    agent_service_subnet_id=subnet["agent_service_subnet_id"],
+                )
                 for name, service in services.items()
                 for subnet in service["agent_service_subnets"]
                 if subnet["agent_service_subnet_is_user_enabled"]
                 != (name in enabled_services)
             ]
             if subnets:
-                payload = {"subnetsToUpdate": subnets}
+                payload = models.V1NetworkAgentsServicesUpdateRequest(
+                    subnets_to_update=subnets
+                )
                 sdk.AgentsApi(api).v1_network_agents_services_update(payload)
                 click.secho("Service subnets updated.", fg="green")
             else:

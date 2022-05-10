@@ -213,27 +213,50 @@ def test_configure_endpoints__tags_providers(
     [
         [
             ["an-endpoint", "--name", "--set-service", "abc"],
-            [{"id": 1, "isEnabled": True}, {"id": 2, "isEnabled": False}],
+            [
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=1, is_enabled=True
+                ),
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=2, is_enabled=False
+                ),
+            ],
         ],
         [
             ["an-endpoint", "-n", "--enable-service", "abc"],
-            [{"id": 1, "isEnabled": True}],
+            [
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=1, is_enabled=True
+                )
+            ],
         ],
         [
             ["an-endpoint", "-n", "--disable-service", "def"],
-            [{"id": 2, "isEnabled": False}],
+            [
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=2, is_enabled=False
+                )
+            ],
         ],
         [
             ["an-endpoint", "-n", "--enable-all-services"],
-            [{"id": 1, "isEnabled": True}],
+            [
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=1, is_enabled=True
+                )
+            ],
         ],
         [
             ["an-endpoint", "-n", "--disable-all-services"],
-            [{"id": 2, "isEnabled": False}],
+            [
+                models.V1NetworkAgentsServicesUpdateRequestSubnetsToUpdate(
+                    agent_service_subnet_id=2, is_enabled=False
+                )
+            ],
         ],
     ],
 )
-def test_configure_endpoints_services(
+def test_configure_endpoints__services(
     runner,
     print_table_mock,
     args,
@@ -250,7 +273,10 @@ def test_configure_endpoints_services(
     ) as patch_mock:
         runner.invoke(ctl.configure_endpoints, args)
         assert mock_agents_search_single.call_count == 2
-        patch_mock.assert_called_once_with(mock.ANY, {"subnetsToUpdate": patch_args})
+        patch_mock.assert_called_once_with(
+            mock.ANY,
+            models.V1NetworkAgentsServicesUpdateRequest(subnets_to_update=patch_args),
+        )
         assert mock_agents_services_get.call_count == 2
         print_table_mock.assert_called_once()
 
