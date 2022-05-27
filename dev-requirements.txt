@@ -68,7 +68,7 @@ six==1.16.0
     #   python-dateutil
     #   syntropy-sdk
     #   virtualenv
-syntropy-sdk==0.4.2
+syntropy-sdk==0.4.3
     # via -r requirements.txt
 toml==0.10.2
     # via

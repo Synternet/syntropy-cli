@@ -40,9 +40,7 @@ def syntropy_api(func):
         try:
             config = sdk.Configuration()
             config.host = API_URL
-            config.api_key[
-                "Authorization"
-            ] = "Bearer " + sdk.utils.login_with_access_token(API_URL, API_KEY)
+            config.api_key["api-key"] = API_KEY
             api = sdk.ApiClient(config)
 
             return func(*args, api=api, **kwargs)

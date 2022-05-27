@@ -722,8 +722,8 @@ def create_connections(agents, use_names, json, api):
 @syntropy_api
 def delete_connection(ids, api):
     """Delete connections using their ID."""
-    for id in ids:
-        sdk.ConnectionsApi(api).v1_network_connections_delete(id)
+    body = models.V1NetworkConnectionsRemoveRequest(agent_connection_group_ids=ids)
+    sdk.ConnectionsApi(api).v1_network_connections_remove(body)
 
 
 def main():

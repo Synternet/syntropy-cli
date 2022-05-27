@@ -406,21 +406,23 @@ def test_create_connections__p2p_by_name(runner, login_mock):
 
 def test_delete_connection(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.ConnectionsApi, "v1_network_connections_delete", autospec=True
+        ctl.sdk.ConnectionsApi, "v1_network_connections_remove", autospec=True
     ) as the_mock:
         runner.invoke(ctl.delete_connection, "123")
         the_mock.assert_called_once_with(
             mock.ANY,
-            123,
+            models.V1NetworkConnectionsRemoveRequest(agent_connection_group_ids=(123,)),
         )
 
 
 def test_delete_connection__multiple(runner, login_mock):
     with mock.patch.object(
-        ctl.sdk.ConnectionsApi, "v1_network_connections_delete", autospec=True
+        ctl.sdk.ConnectionsApi, "v1_network_connections_remove", autospec=True
     ) as the_mock:
-        runner.invoke(ctl.delete_connection, ["123", "345"])
-        assert the_mock.call_args_list == [
-            mock.call(mock.ANY, 123),
-            mock.call(mock.ANY, 345),
-        ]
+        runner.invoke(ctl.delete_connection, ("123", "345"))
+        the_mock.assert_called_once_with(
+            mock.ANY,
+            models.V1NetworkConnectionsRemoveRequest(
+                agent_connection_group_ids=(123, 345)
+            ),
+        )
